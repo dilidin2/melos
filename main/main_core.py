@@ -377,9 +377,49 @@ class SongRequestBot:
             request = await self.request_queue.get()
 
             if request:
-                await self._process_request(request)
+                # Salva quale canzone è "quella da ripetere" al momento del get
+                repeat_target = request
+
+                while True:  # ← loop interno per il repeat
+                    success = await self._process_request(repeat_target)
+                    # task_done() chiamato una sola volta per la richiesta originale
+
+                    if not success:
+                        if self.repeat_mode != 'off':
+                            logger.warning(f"Riproduzione fallita, disattivo repeat")
+                            self.repeat_mode = 'off'
+                            self.repeat_remaining = 0
+                        await self._persist_queue()
+                        break
+
+                    # Gestione repeat
+                    if self.repeat_mode == 'infinite':
+                        logger.info(f"🔁 Repeat INFINITO: ripeto '{repeat_target.query}'")
+                        # NON rimette in coda, ricomincia il while interno
+                        continue
+
+                    elif self.repeat_mode == 'count':
+                        self.repeat_remaining -= 1
+                        if self.repeat_remaining > 0:
+                            logger.info(
+                                f"🔁 Repeat ({self.repeat_remaining}/{self.repeat_count}): "
+                                f"ripeto '{repeat_target.query}'"
+                            )
+                            continue  # replay immediato, nessun'altra canzone si intromette
+                        else:
+                            self.repeat_mode = 'off'
+                            logger.info(f"🔁 Repeat terminato dopo {self.repeat_count} volte")
+                            await self._persist_queue()
+                            break
+                    else:
+                        # repeat_mode == 'off'
+                        await self._persist_queue()
+                        break
+
+                # Alla fine del loop interno (repeat terminato o fallito),
+                # segnala il completamento della richiesta originale
                 self.request_queue.task_done()
-                await self._persist_queue()
+
             else:
                 if not self._shutdown_event.is_set():
                     # Estrae una canzone random da downloads/ evitando la stessa 2 volte di fila

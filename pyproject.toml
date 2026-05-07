@@ -24,7 +24,7 @@ classifiers = [
 
 dependencies = [
     "twitchAPI>=4.5.0,<5.0.0",
-    "yt-dlp>=2024.1.0,<2026.0.0",
+    "yt-dlp>=2026.3.17",
     "pygame>=2.5.0,<3.0.0",
     "sounddevice>=0.4.0,<1.0.0",
     "numpy>=1.24.0,<3.0.0",

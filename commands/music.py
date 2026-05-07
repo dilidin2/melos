@@ -72,13 +72,16 @@ class MusicCommands:
         if self._bot and hasattr(self._bot, 'repeat_mode'):
             if count < 0:
                 self._bot.repeat_mode = 'infinite'
+                self._bot.repeat_remaining = 0  # 0 = infinito per il processor
                 return "🔁 Repeat attivo (infinito)"
             elif count == 0:
                 self._bot.repeat_mode = 'off'
+                self._bot.repeat_remaining = 0
                 return "🔁 Modalità repeat disattivata"
             else:
                 self._bot.repeat_mode = 'count'
                 self._bot.repeat_count = count
+                self._bot.repeat_remaining = count  # Inizializza il contatore
                 return f"🔁 Repeat attivo ({count} volte)"
 
         # Fallback se il bot non ha il campo repeat_mode
