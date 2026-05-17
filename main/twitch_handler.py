@@ -153,6 +153,7 @@ class TwitchHandler:
             self.chat.register_command("top_canzoni", self._handle_other_command)
             self.chat.register_command("top_user", self._handle_other_command)
             self.chat.register_command("export_stats", self._handle_other_command)
+            self.chat.register_command("storia", self._handle_other_command)
             # Music commands
             self.chat.register_command("volume", self._handle_other_command)
             self.chat.register_command("pausa", self._handle_other_command)
@@ -164,7 +165,9 @@ class TwitchHandler:
             self.chat.register_command("next", self._handle_other_command)
             self.chat.register_command("queue_info", self._handle_other_command)
             self.chat.register_command("duration", self._handle_other_command)
+            self.chat.register_command("durata", self._handle_other_command)
             self.chat.register_command("quando", self._handle_other_command)
+            self.chat.register_command("random", self._handle_other_command)
             # Utility commands
             self.chat.register_command("help", self._handle_other_command)
             self.chat.register_command("version", self._handle_other_command)

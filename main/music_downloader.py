@@ -193,11 +193,17 @@ class MusicDownloader:
         Scarica una canzone da YouTube.
 
         Args:
-            query_or_url: Titolo della canzone o URL YouTube
+            query_or_url: Titolo della canzone, URL YouTube o path file locale
 
         Returns:
             Percorso del file scaricato o None in caso di errore
         """
+        # Se il query è già un path di file esistente, lo restituisce direttamente
+        # (evita ricerche YouTube inutili per !random e riproduzione casuale).
+        if os.path.isfile(query_or_url):
+            logger.info(f"File locale trovato, uso diretto: {query_or_url}")
+            return query_or_url
+
         # Se è un URL diretto usa solo quello; se è una query testo
         # recupera più candidati e prova in ordine finché uno è disponibile.
         # FIX: usiamo _search_youtube_candidates_with_info per ottenere le info

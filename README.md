@@ -62,28 +62,44 @@ The bot will connect to your Twitch channel and start listening for commands.
 | Command | Description |
 |---------|-------------|
 | `!sr <query>` | Request a song |
-| `!help` | Show help |
+| `!random [N]` | Play N random songs from library |
+| `!duration <song>` | Show song duration |
+| `!durata <N>` | Show duration of song at position N in queue |
+| `!quando` | Estimate when your song will play |
+| `!help [cmd]` | Show help |
 | `!volume <0-100>` | Set volume |
-| `!pause` | Pause playback |
+| `!pausa` | Pause playback |
 | `!riprendi` | Resume playback |
-| `!repeat` | Enable repeat mode |
-| `!ripeti` | Enable infinite repeat |
-| `!stop_ripeti` | Disable repeat |
-| `!next` | Skip to next song |
+| `!repeat [N]` | Enable repeat mode |
+| `!repeat_off` | Disable repeat |
+| `!ripeti [N]` | Repeat song (N=1 or infinite) |
+| `!stop_ripeti` | Stop repeat |
+| `!next` | Next song |
 | `!queue_info` | Show current queue |
 | `!stats` | View analytics |
-| `!top_canzoni` | Show top requested songs |
-| `!top_user` | Show top requesting users |
+| `!top_canzoni [N]` | Show top requested songs |
+| `!top_user [N]` | Show top requesting users |
+| `!export_stats <format>` | Export analytics (json/csv) |
+| `!storia [N]` | Play history of last N songs |
 | `!playlist <name>` | View a playlist |
 | `!crea <name>` | Create a playlist |
 | `!aggiungi <playlist> <song>` | Add song to playlist |
 | `!rimuovi <playlist> <index>` | Remove song from playlist |
+| `!sposta <playlist> <p1> <p2>` | Swap songs in playlist |
 | `!svuota <playlist>` | Clear a playlist |
-| `!pompa <playlist>` | Pump (play) a playlist |
+| `!lista_playlist` | List all playlists |
+| `!pompa <playlist> [N]` | Pump N random songs from playlist |
 | `!whitelist <user>` | Whitelist a user (admin) |
 | `!blacklist <user>` | Blacklist a user (admin) |
+| `!unblacklist <user>` | Remove from blacklist (admin) |
+| `!whitelist_list` | Show whitelist (admin) |
+| `!blacklist_list` | Show blacklist (admin) |
 | `!skippa` | Skip current song (admin) |
+| `!rimuovi_coda <pos>` | Remove from queue (admin) |
+| `!coda_info` | Queue info (admin) |
 | `!clear_queue` | Clear the queue (admin) |
+| `!version` | Show bot version |
+| `!uptime` | Show bot uptime |
 
 ## Project Structure
 

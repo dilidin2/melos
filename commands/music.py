@@ -276,3 +276,58 @@ class MusicCommands:
             return f"🕐 La tua prossima canzone (**'{title}'**) partirà **adesso!**"
         else:
             return f"🕐 La tua prossima canzone (**'{title}'**) partirà tra circa {time_str} ({songs_before} canzoni)"
+
+    async def cmd_random(self, username: str, n: int = 1) -> str:
+        """!random [N] - Riproduci N canzoni casuali dalla libreria scaricata."""
+        import os
+        import random as random_module
+        from main.config import DOWNLOAD_DIR
+        from main.main_core import SongRequest
+
+        try:
+            files = os.listdir(DOWNLOAD_DIR)
+            audio_files = [
+                f for f in files if f.lower().endswith((".mp3", ".wav", ".m4a"))
+            ]
+        except Exception as e:
+            logger.error(f"Errore lettura directory downloads: {e}")
+            return "❌ Impossibile leggere la libreria musicale."
+
+        if not audio_files:
+            return "📭 Nessuna canzone scaricata nella libreria. Scarica prima qualcosa con !sr!"
+
+        # Evita di ripetere la stessa canzone 2 volte di fila
+        last_song = getattr(self._bot, 'last_random_song', None)
+        available = [f for f in audio_files if f != last_song] if last_song else audio_files
+
+        count = min(n, len(available))
+        selected = random_module.sample(available, count)
+
+        if count == 0:
+            return "📭 Libreria vuota o nessun brano disponibile."
+
+        for song_file in selected:
+            request_id = self._request_queue._request_counter
+            self._request_queue._request_counter += 1
+            # Passa il path completo così download() lo trova subito senza cercare su YouTube
+            full_path = os.path.join(DOWNLOAD_DIR, song_file)
+            request = SongRequest(
+                query=full_path,
+                username=username,
+                channel_id="",
+                request_id=request_id,
+            )
+            await self._request_queue.put(request)
+
+            # Aggiorna il tracking per evitare ripetizioni consecutive
+            if self._bot and hasattr(self._bot, 'last_random_song'):
+                self._bot.last_random_song = song_file
+
+        song_names = [os.path.splitext(f)[0] for f in selected]
+        if n == 1:
+            return f"🎲 Canzone random dalla libreria: **{song_names[0]}**"
+        else:
+            lines = [f"🎲 {count} canzoni random dalla libreria:"]
+            for i, name in enumerate(song_names, 1):
+                lines.append(f"  {i}. {name}")
+            return "\n".join(lines)

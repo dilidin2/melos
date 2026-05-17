@@ -180,3 +180,7 @@ class Analytics:
             return "\n".join(lines)
 
         return "Formato non supportato"
+
+    def get_play_history(self, n: int = 20) -> list[dict]:
+        """Ottiene le ultime N riproduzioni dalla cronologia."""
+        return self._play_history[-n:]

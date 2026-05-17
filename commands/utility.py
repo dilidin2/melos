@@ -28,9 +28,9 @@ class UtilityCommands:
         """!help [comando] - Mostra aiuto."""
         if not command:
             return [
-                """📚 1/3 [MUSICA]: !sr <url/titolo> | [PLAYLIST]: !crea <nome> • !playlist [n] • !aggiungi <pl> • !rimuovi <pl> <pos> • !sposta <pl> <p1> <p2> • !svuota <pl> • !lista_playlist""",
-                """📚 2/3 [MOD]: !whitelist/!blacklist <user> • !skippa • !rimuovi_coda <pos> • !clear_queue | [STATS]: !stats • !top_canzoni [N] • !top_user [N] • !export_stats""",
-                """📚 3/3 [CTRL]: !volume <0-100> • !pausa/!riprendi • !repeat/!repeat_off • !ripeti/!stop_ripeti • !next | [UTIL]: !help [cmd] • !version • !uptime""",
+                """📚 1/3 [MUSICA]: !sr <url/titolo> • !random [N] • !duration <canzone> • !durata <N> • !quando | [PLAYLIST]: !crea <nome> • !playlist [n] • !aggiungi <pl> <song> • !rimuovi <pl> <pos> • !sposta <pl> <p1> <p2> • !svuota <pl> • !lista_playlist • !pompa <pl> [N]""",
+                """📚 2/3 [MOD]: !whitelist/!blacklist/!unblacklist <user> • !whitelist_list/!blacklist_list • !skippa • !rimuovi_coda <pos> • !clear_queue • !coda_info | [STATS]: !stats • !top_canzoni [N] • !top_user [N] • !export_stats • !storia [N]""",
+                """📚 3/3 [CTRL]: !volume <0-100> • !pausa/!riprendi • !repeat/!repeat_off • !ripeti/!stop_ripeti • !next • !queue_info | [UTIL]: !help [cmd] • !version • !uptime""",
             ]
 
         else:
@@ -48,6 +48,7 @@ class UtilityCommands:
                 "unblacklist": "!unblacklist <utente> - Rimuovi dalla blacklist (admin)",
                 "whitelist_list": "!whitelist_list - Mostra lista whitelist",
                 "blacklist_list": "!blacklist_list - Mostra lista blacklist",
+                "coda_info": "!coda_info - Mostra info sulla coda (admin)",
                "skippa": "!skippa - Salta canzone corrente (admin)",
                 "rimuovi_coda": "!rimuovi_coda <posizione> - Rimuovi dalla coda",
                 "coda_info": "!coda_info - Mostra info sulla coda",
@@ -68,6 +69,8 @@ class UtilityCommands:
                 "duration": "!duration <canzone> - Mostra durata canzone",
                 "durata": "!durata <N> - Mostra durata canzone in posizione N nella coda",
                 "quando": "!quando - Stima quando partirà la tua prossima canzone",
+                "random": "!random [N] - Riproduci N canzoni casuali dalla libreria",
+                "storia": "!storia [N] - Cronologia ultime N canzoni riprodotte",
                 "help": "!help [comando] - Mostra aiuto",
                 "version": "!version - Mostra versione del bot",
                 "uptime": "!uptime - Mostra tempo di attività",

@@ -132,6 +132,7 @@ ANALYTICS_STATS_COMMAND: str = "stats"
 ANALYTICS_TOP_SONGS_COMMAND: str = "top_canzoni"
 ANALYTICS_TOP_USERS_COMMAND: str = "top_user"
 ANALYTICS_EXPORT_COMMAND: str = "export_stats"
+ANALYTICS_STORIA_COMMAND: str = "storia"
 
 # Music control commands
 MUSIC_VOLUME_COMMAND: str = "volume"
@@ -146,6 +147,7 @@ MUSIC_QUEUE_INFO_COMMAND: str = "queue_info"
 MUSIC_DURATION_COMMAND: str = "duration"
 MUSIC_DURATA_COMMAND: str = "durata"
 MUSIC_WHEN_COMMAND: str = "quando"
+MUSIC_RANDOM_COMMAND: str = "random"
 
 # Utility commands
 UTILITY_HELP_COMMAND: str = "help"

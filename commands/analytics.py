@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -66,3 +67,25 @@ class AnalyticsCommands:
             return f"📦 Statistiche esportate:\n```json\n{export}\n```"
         else:
             return f"```\n{export}\n```"
+
+    async def cmd_storia(self, username: str, n: int = 10) -> str:
+        """!storia [N] - Cronologia delle ultime N canzoni riprodotte."""
+        history = self.analytics.get_play_history(n)
+
+        if not history:
+            return "📭 Nessuna canzone riprodotta finora. Usa !sr <canzone> per iniziare!"
+
+        lines = [f"🎧 Ultime {len(history)} canzoni riprodotte:"]
+        for i, entry in enumerate(reversed(history), 1):
+            ts = entry.get("timestamp", "")
+            try:
+                dt = datetime.fromisoformat(ts)
+                time_str = dt.strftime("%d/%m %H:%M")
+            except (ValueError, TypeError):
+                time_str = ts
+
+            lines.append(
+                f"  {i}. **{entry['query']}** (@{entry['username']}) — {time_str}"
+            )
+
+        return "\n".join(lines)

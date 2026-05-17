@@ -29,6 +29,7 @@ from main.config import (
     ANALYTICS_TOP_SONGS_COMMAND,
     ANALYTICS_TOP_USERS_COMMAND,
     ANALYTICS_EXPORT_COMMAND,
+    ANALYTICS_STORIA_COMMAND,
     MUSIC_VOLUME_COMMAND,
     MUSIC_PAUSE_COMMAND,
     MUSIC_RESUME_COMMAND,
@@ -41,6 +42,7 @@ from main.config import (
     MUSIC_DURATION_COMMAND,
     MUSIC_DURATA_COMMAND,
     MUSIC_WHEN_COMMAND,
+    MUSIC_RANDOM_COMMAND,
     UTILITY_HELP_COMMAND,
     UTILITY_VERSION_COMMAND,
     UTILITY_UPTIME_COMMAND,
@@ -86,6 +88,7 @@ class CommandProcessor:
         stat_top_songs = re.escape(ANALYTICS_TOP_SONGS_COMMAND)
         stat_top_users = re.escape(ANALYTICS_TOP_USERS_COMMAND)
         stat_export = re.escape(ANALYTICS_EXPORT_COMMAND)
+        stat_storia = re.escape(ANALYTICS_STORIA_COMMAND)
         mus_volume = re.escape(MUSIC_VOLUME_COMMAND)
         mus_pause = re.escape(MUSIC_PAUSE_COMMAND)
         mus_resume = re.escape(MUSIC_RESUME_COMMAND)
@@ -98,6 +101,7 @@ class CommandProcessor:
         mus_duration = re.escape(MUSIC_DURATION_COMMAND)
         mus_durata = re.escape(MUSIC_DURATA_COMMAND)
         mus_when = re.escape(MUSIC_WHEN_COMMAND)
+        mus_random = re.escape(MUSIC_RANDOM_COMMAND)
         util_help = re.escape(UTILITY_HELP_COMMAND)
         util_version = re.escape(UTILITY_VERSION_COMMAND)
         util_uptime = re.escape(UTILITY_UPTIME_COMMAND)
@@ -137,6 +141,8 @@ class CommandProcessor:
             rf"{prefix}{mus_duration}\s+(.+)$": "cmd_duration",
             rf"{prefix}{mus_durata}\s+(\d+)$": "cmd_durata",
             rf"{prefix}{mus_when}$": "cmd_quando",
+            rf"{prefix}{mus_random}(?:\s+(\d+))?$": "cmd_random",
+            rf"{prefix}{stat_storia}(?:\s+(\d+))?$": "cmd_storia",
             rf"{prefix}{util_help}(?:\s+(\w+))?$": "cmd_help",
             rf"{prefix}{util_version}$": "cmd_version",
             rf"{prefix}{util_uptime}$": "cmd_uptime",
@@ -386,6 +392,16 @@ class CommandProcessor:
     async def cmd_quando(self, username: str, channel_id: str):
         """!quando - Stima quando partirà la tua prossima canzone."""
         return await self.services.music_commands.cmd_quando(username, channel_id)
+
+    async def cmd_random(self, n_str: Optional[str], username: str, channel_id: str):
+        """!random [N] - Riproduci N canzoni casuali dalla libreria."""
+        n = int(n_str) if n_str else 1
+        return await self.services.music_commands.cmd_random(username, n)
+
+    async def cmd_storia(self, n_str: Optional[str], username: str, channel_id: str):
+        """!storia [N] - Cronologia ultime N canzoni riprodotte."""
+        n = int(n_str) if n_str else 10
+        return await self.services.analytics_commands.cmd_storia(username, n)
 
     # =====================================================================
     # UTILITY COMMANDS
