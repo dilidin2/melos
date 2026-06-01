@@ -1,6 +1,8 @@
-# Chat-Tune
+# melos
 
 A Twitch chat bot for requesting and playing music directly in your stream via chat commands.
+
+![melos](image/img.png)
 
 ## Features
 
@@ -20,8 +22,8 @@ A Twitch chat bot for requesting and playing music directly in your stream via c
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/dilidin2/chat-tune.git
-cd chat-tune
+git clone https://github.com/dilidin2/melos.git
+cd melos
 ```
 
 ### 2. Install uv (Python package manager)
@@ -33,7 +35,7 @@ Follow the installation instructions at: https://docs.astral.sh/uv/getting-start
 ```bash
 uv venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-uv pip install -e .
+uv sync
 ```
 
 ### 4. Configure environment variables
@@ -47,7 +49,17 @@ TARGET_CHANNEL=your_twitch_channel
 OAUTH_REDIRECT_URI=http://localhost:17563
 ```
 
-You can obtain your Twitch Client ID and Client Secret from the [Twitch Developer Console](https://dev.twitch.tv/console).
+To get your credentials:
+
+1. Visit the [Twitch Developer Console](https://dev.twitch.tv/console)
+2. Click **"Register Your Application"**
+3. Fill in the form:
+   - **Name**: any name you like
+   - **OAuth Redirect URLs**: `http://localhost:17563`
+   - **Category**: `Chat Bot`
+   - **Client Type**: `Confidential`
+4. Copy the **Client ID** shown on the page
+5. Under **Client Secret**, click **"New Secret"** and copy the generated value
 
 ## Usage
 
@@ -104,7 +116,7 @@ The bot will connect to your Twitch channel and start listening for commands.
 ## Project Structure
 
 ```
-chat-tune/
+melos/
 ├── run.py                  # Main entry point
 ├── main/                   # Core bot logic
 │   ├── main_core.py        # SongRequestBot, queue, duplicate cache
