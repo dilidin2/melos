@@ -142,6 +142,8 @@ def mock_command_services():
     services.bot.uptime_start = asyncio.get_event_loop().time()
     services.bot.audio_player = MagicMock()
     services.bot.request_queue = MagicMock()
+    services.bot.chat_message = MagicMock()
+    services.bot.chat_message.send_public = AsyncMock()
     services.playlist_commands = MagicMock()
     services.admin_commands = MagicMock()
     services.analytics_commands = MagicMock()
@@ -183,6 +185,7 @@ def mock_config():
         "LOG_LEVEL": "INFO",
         "LOG_FILE": "test.log",
         "MAX_QUEUE_SIZE": 50,
+        "ADMIN_USERS": [],
         "CHAT_COMMAND_PREFIX": "!",
         "SONG_REQUEST_COMMAND": "sr",
         "PLAYLIST_CREATE_COMMAND": "crea",

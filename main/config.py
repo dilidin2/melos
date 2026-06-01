@@ -90,7 +90,8 @@ MAX_QUEUE_SIZE: int = 50
 # ====================
 
 # Admin users (Twitch nicknames con permessi speciali)
-ADMIN_USERS: list[str] = []
+# Configurabile via variabile d'ambiente ADMIN_USERS (es: "user1,user2,user3")
+ADMIN_USERS: list[str] = [x.strip().lower() for x in os.getenv("ADMIN_USERS", "").split(",") if x.strip()]
 
 # Whitelist users (possono richiedere anche senza follower)
 WHITELIST_USERS: list[str] = []

@@ -6,6 +6,7 @@ from typing import Optional
 from loguru import logger
 
 from main.config import (
+    ADMIN_USERS,
     CHAT_COMMAND_PREFIX,
     SONG_REQUEST_COMMAND,
     PLAYLIST_CREATE_COMMAND,
@@ -62,6 +63,19 @@ class CompiledPattern:
 class CommandProcessor:
     """Elabora e gestisce tutti i comandi chat con DI esplicita."""
 
+    # Metodi che richiedono permessi admin
+    ADMIN_COMMANDS: set[str] = {
+        "cmd_whitelist",
+        "cmd_blacklist",
+        "cmd_unblacklist",
+        "cmd_whitelist_list",
+        "cmd_blacklist_list",
+        "cmd_skippa",
+        "cmd_rimuovi_coda",
+        "cmd_clear_queue",
+        "cmd_coda_info",
+    }
+
     def __init__(self, services: CommandServices):
         self.services = services
 
@@ -81,6 +95,7 @@ class CommandProcessor:
         a_whitelist_list = re.escape(ADMIN_WHITELIST_LIST_COMMAND)
         a_blacklist_list = re.escape(ADMIN_BLACKLIST_LIST_COMMAND)
         a_skip = re.escape(ADMIN_SKIP_COMMAND)
+        a_skip_alias = re.escape("skip")
         a_remove_queue = re.escape(ADMIN_REMOVE_QUEUE_COMMAND)
         a_queue_info = re.escape(ADMIN_QUEUE_INFO_COMMAND)
         a_clear_queue = re.escape(ADMIN_CLEAR_QUEUE_COMMAND)
@@ -122,6 +137,7 @@ class CommandProcessor:
             rf"{prefix}{a_whitelist_list}$": "cmd_whitelist_list",
             rf"{prefix}{a_blacklist_list}$": "cmd_blacklist_list",
             rf"{prefix}{a_skip}$": "cmd_skippa",
+            rf"{prefix}{a_skip_alias}$": "cmd_skippa",
             rf"{prefix}{a_remove_queue}\s+(\d+)$": "cmd_rimuovi_coda",
             rf"{prefix}{a_queue_info}$": "cmd_coda_info",
             rf"{prefix}{a_clear_queue}$": "cmd_clear_queue",
@@ -152,6 +168,10 @@ class CommandProcessor:
             CompiledPattern(pattern, method) for pattern, method in raw_patterns.items()
         ]
 
+    def _is_admin(self, username: str) -> bool:
+        """Controlla se un utente ha i permessi admin."""
+        return username.lower() in [u.lower() for u in ADMIN_USERS]
+
     async def process(self, text: str, username: str, channel_id: str) -> bool:
         """Elabora un messaggio di chat e risponde se è un comando."""
         text_lower = text.lower().strip()
@@ -164,6 +184,11 @@ class CommandProcessor:
                 method = getattr(self, method_name, None)
 
                 if method:
+                    # Controllo permessi per comandi admin
+                    if method_name in self.ADMIN_COMMANDS and not self._is_admin(username):
+                        await self._send_public(channel_id, "⛔ Non hai i permessi per usare questo comando.")
+                        return True
+
                     args = list(match.groups())
                     args.append(username)
                     args.append(channel_id)

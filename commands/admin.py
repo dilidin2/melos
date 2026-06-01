@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from main.config import ADMIN_USERS
+
 if TYPE_CHECKING:
     from main.admin_handler import AdminHandler
     from main.audio_player import AudioPlayer
@@ -28,6 +30,8 @@ class AdminCommands:
 
     async def cmd_whitelist(self, username: str, target_user: str) -> str:
         """!whitelist <username> - Aggiunge un utente alla whitelist."""
+        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
+            return "⛔ Non hai i permessi per usare questo comando."
         if not self.admin_handler:
             return "❌ Admin handler non disponibile."
 
@@ -37,6 +41,8 @@ class AdminCommands:
 
     async def cmd_blacklist(self, username: str, target_user: str) -> str:
         """!blacklist <username> - Mette un utente in blacklist."""
+        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
+            return "⛔ Non hai i permessi per usare questo comando."
         if not self.admin_handler:
             return "❌ Admin handler non disponibile."
 
@@ -46,6 +52,8 @@ class AdminCommands:
 
     async def cmd_unblacklist(self, username: str, target_user: str) -> str:
         """!unblacklist <username> - Rimuove un utente dalla blacklist."""
+        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
+            return "⛔ Non hai i permessi per usare questo comando."
         if not self.admin_handler:
             return "❌ Admin handler non disponibile."
 
@@ -55,6 +63,8 @@ class AdminCommands:
 
     async def cmd_whitelist_list(self, username: str) -> str:
         """!whitelist_list - Mostra tutti gli utenti whitelist."""
+        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
+            return "⛔ Non hai i permessi per usare questo comando."
         if not self.admin_handler:
             return "❌ Admin handler non disponibile."
 
@@ -71,6 +81,8 @@ class AdminCommands:
 
     async def cmd_blacklist_list(self, username: str) -> str:
         """!blacklist_list - Mostra tutti gli utenti blacklist."""
+        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
+            return "⛔ Non hai i permessi per usare questo comando."
         if not self.admin_handler:
             return "❌ Admin handler non disponibile."
 
@@ -87,6 +99,8 @@ class AdminCommands:
 
     async def cmd_skippa(self, username: str) -> str:
         """!skippa - Salta la canzone corrente."""
+        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
+            return "⛔ Non hai i permessi per usare questo comando."
         if not self.audio_player or not self.audio_player.is_playing():
             return "❌ Nessuna canzone in riproduzione da saltare."
 
@@ -99,6 +113,8 @@ class AdminCommands:
         Rimuove la canzone alla posizione specificata (1-based) dalla coda.
         La posizione 1 è la prossima canzone da riprodurre.
         """
+        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
+            return "⛔ Non hai i permessi per usare questo comando."
         if not self.request_queue:
             return "❌ Impossibile accedere alla coda."
 
@@ -158,6 +174,8 @@ class AdminCommands:
         Rimuove tutte le canzoni dalla coda. Questa operazione non può
         essere annullata.
         """
+        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
+            return "⛔ Non hai i permessi per usare questo comando."
         if not self.request_queue:
             return "❌ Impossibile accedere alla coda."
 
@@ -192,6 +210,8 @@ class AdminCommands:
 
     async def cmd_coda_info(self, username: str) -> str:
         """!coda_info - Mostra informazioni sulla coda."""
+        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
+            return "⛔ Non hai i permessi per usare questo comando."
         if not self.request_queue:
             return "📭 Coda non disponibile."
 
