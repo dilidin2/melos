@@ -106,7 +106,7 @@ The bot will connect to your Twitch channel and start listening for commands.
 | `!unblacklist <user>` | Remove from blacklist (admin) |
 | `!whitelist_list` | Show whitelist (admin) |
 | `!blacklist_list` | Show blacklist (admin) |
-| `!skippa` | Skip current song (admin) |
+| `!skippa` / `!skip` | Skip current song (admin) |
 | `!rimuovi_coda <pos>` | Remove from queue (admin) |
 | `!coda_info` | Queue info (admin) |
 | `!clear_queue` | Clear the queue (admin) |
