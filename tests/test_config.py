@@ -39,7 +39,6 @@ from main.config import (
     ADMIN_BLACKLIST_LIST_COMMAND,
     ADMIN_SKIP_COMMAND,
     ADMIN_REMOVE_QUEUE_COMMAND,
-    ADMIN_QUEUE_INFO_COMMAND,
     ADMIN_CLEAR_QUEUE_COMMAND,
     ANALYTICS_STATS_COMMAND,
     ANALYTICS_TOP_SONGS_COMMAND,
@@ -209,10 +208,6 @@ class TestConstants:
     def test_admin_remove_queue_command(self):
         """Test ADMIN_REMOVE_QUEUE_COMMAND is 'rimuovi_coda'."""
         assert ADMIN_REMOVE_QUEUE_COMMAND == "rimuovi_coda"
-
-    def test_admin_queue_info_command(self):
-        """Test ADMIN_QUEUE_INFO_COMMAND is 'coda_info'."""
-        assert ADMIN_QUEUE_INFO_COMMAND == "coda_info"
 
     def test_admin_clear_queue_command(self):
         """Test ADMIN_CLEAR_QUEUE_COMMAND is 'clear_queue'."""

@@ -203,7 +203,6 @@ def mock_config():
         "ADMIN_BLACKLIST_LIST_COMMAND": "blacklist_list",
         "ADMIN_SKIP_COMMAND": "skippa",
         "ADMIN_REMOVE_QUEUE_COMMAND": "rimuovi_coda",
-        "ADMIN_QUEUE_INFO_COMMAND": "coda_info",
         "ADMIN_CLEAR_QUEUE_COMMAND": "clear_queue",
         "ANALYTICS_STATS_COMMAND": "stats",
         "ANALYTICS_TOP_SONGS_COMMAND": "top_canzoni",

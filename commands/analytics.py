@@ -33,7 +33,7 @@ class AnalyticsCommands:
 
         return "\n".join(lines)
 
-    async def cmd_top_canzoni(self, username: str, n: int = 10) -> str:
+    async def cmd_top_songs(self, username: str, n: int = 10) -> str:
         """!top_canzoni [number] - Shows the N most requested songs."""
         songs = self.analytics.get_top_songs(n)
 
@@ -46,7 +46,7 @@ class AnalyticsCommands:
 
         return "\n".join(lines)
 
-    async def cmd_top_user(self, username: str, n: int = 10) -> str:
+    async def cmd_top_users(self, username: str, n: int = 10) -> str:
         """!top_user [number] - Shows the users with the most requests."""
         users = self.analytics.get_top_users(n)
 
@@ -59,7 +59,7 @@ class AnalyticsCommands:
 
         return "\n".join(lines)
 
-    async def cmd_storia(self, username: str, n: int = 10) -> str:
+    async def cmd_history(self, username: str, n: int = 10) -> str:
         """!storia [N] - History of the last N songs played."""
         history = self.analytics.get_play_history(n)
 

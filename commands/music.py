@@ -197,7 +197,7 @@ class MusicCommands:
         else:
             return f"⏱️ Duration of '{query}': not found in local database"
 
-    async def cmd_durata(self, position_str: str, username: str, channel_id: str) -> str:
+    async def cmd_at(self, position_str: str, username: str, channel_id: str) -> str:
         """!durata <N> - Shows duration of song at position N in the queue."""
         try:
             position = int(position_str)
@@ -232,7 +232,7 @@ class MusicCommands:
 
         return f"⏱️ Song #{position}: **'{title}'** - Duration: {duration_str}"
 
-    async def cmd_quando(self, username: str, channel_id: str) -> str:
+    async def cmd_when(self, username: str, channel_id: str) -> str:
         """!quando - Estimates when your next song will play in the queue."""
         if not self._request_queue:
             return "❌ Unable to access the queue."

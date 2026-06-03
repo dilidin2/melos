@@ -125,7 +125,6 @@ ADMIN_BLACKLIST_LIST_COMMAND: str = "blacklist_list"
 ADMIN_SKIP_COMMAND: str = "skip"
 
 ADMIN_REMOVE_QUEUE_COMMAND: str = "remove_queue"
-ADMIN_QUEUE_INFO_COMMAND: str = "queue_info"
 ADMIN_CLEAR_QUEUE_COMMAND: str = "clear_queue"
 
 # Analytics commands

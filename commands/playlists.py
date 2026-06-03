@@ -18,7 +18,7 @@ class PlaylistCommands:
         self.request_queue = request_queue
         self.bot = bot
 
-    async def cmd_crea(self, username: str, nome_playlist: str) -> str:
+    async def cmd_create(self, username: str, nome_playlist: str) -> str:
         """!crea <playlist_name> - Creates a new playlist."""
         playlist = self.playlist_manager.create_playlist(username, nome_playlist)
 
@@ -66,7 +66,7 @@ class PlaylistCommands:
 
             return "\n".join(lines)
 
-    async def cmd_aggiungi(
+    async def cmd_add(
         self,
         username: str,
         nome_playlist: str,
@@ -84,7 +84,7 @@ class PlaylistCommands:
 
         return f"✅ Song added to '{nome_playlist}'"
 
-    async def cmd_rimuovi(
+    async def cmd_remove(
         self, username: str, nome_playlist: str, index_or_name: str
     ) -> str:
         """!rimuovi <playlist_name> <number_or_name> - Removes a song."""
@@ -97,7 +97,7 @@ class PlaylistCommands:
 
         return "✅ Song removed from playlist."
 
-    async def cmd_sposta(
+    async def cmd_move(
         self, username: str, nome_playlist: str, num1: str, num2: str
     ) -> str:
         """!sposta <playlist_name> <number1> <number2> - Moves/swaps a song."""
@@ -110,7 +110,7 @@ class PlaylistCommands:
 
         return "✅ Songs swapped successfully."
 
-    async def cmd_svuota(self, username: str, nome_playlist: str) -> str:
+    async def cmd_clear(self, username: str, nome_playlist: str) -> str:
         """!svuota <playlist_name> - Removes all songs from the playlist."""
         success = self.playlist_manager.clear_playlist(username, nome_playlist)
 
@@ -119,7 +119,7 @@ class PlaylistCommands:
 
         return "✅ Playlist cleared."
 
-    async def cmd_lista_playlist(self, username: str) -> str:
+    async def cmd_list_playlists(self, username: str) -> str:
         """!lista_playlist - Shows all available playlists."""
         playlists = self.playlist_manager.get_user_playlists(username)
 
@@ -132,7 +132,7 @@ class PlaylistCommands:
 
         return "\n".join(lines)
 
-    async def cmd_pompa(self, username: str, playlist_name: Optional[str], n: int, channel_id: str) -> str:
+    async def cmd_pump(self, username: str, playlist_name: Optional[str], n: int, channel_id: str) -> str:
         """!pompa [playlist] [n] - Pumps N random songs from a playlist."""
         if playlist_name is None:
             playlists = self.playlist_manager.get_user_playlists(username)

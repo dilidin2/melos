@@ -24,7 +24,6 @@ from main.config import (
     ADMIN_BLACKLIST_LIST_COMMAND,
     ADMIN_SKIP_COMMAND,
     ADMIN_REMOVE_QUEUE_COMMAND,
-    ADMIN_QUEUE_INFO_COMMAND,
     ADMIN_CLEAR_QUEUE_COMMAND,
     ANALYTICS_STATS_COMMAND,
     ANALYTICS_TOP_SONGS_COMMAND,
@@ -71,7 +70,6 @@ class CommandProcessor:
         "cmd_skip",
         "cmd_remove_queue",
         "cmd_clear_queue",
-        "cmd_queue_info_admin",
     }
 
     def __init__(self, services: CommandServices):
@@ -95,7 +93,6 @@ class CommandProcessor:
         a_skip = re.escape(ADMIN_SKIP_COMMAND)
         a_skip_alias = re.escape("skip")
         a_remove_queue = re.escape(ADMIN_REMOVE_QUEUE_COMMAND)
-        a_queue_info = re.escape(ADMIN_QUEUE_INFO_COMMAND)
         a_clear_queue = re.escape(ADMIN_CLEAR_QUEUE_COMMAND)
         stat_stats = re.escape(ANALYTICS_STATS_COMMAND)
         stat_top_songs = re.escape(ANALYTICS_TOP_SONGS_COMMAND)
@@ -135,7 +132,6 @@ class CommandProcessor:
             rf"{prefix}{a_skip}$": "cmd_skip",
             rf"{prefix}{a_skip_alias}$": "cmd_skip",
             rf"{prefix}{a_remove_queue}\s+(\d+)$": "cmd_remove_queue",
-            rf"{prefix}{a_queue_info}$": "cmd_queue_info_admin",
             rf"{prefix}{a_clear_queue}$": "cmd_clear_queue",
             rf"{prefix}{stat_stats}$": "cmd_stats",
             rf"{prefix}{stat_top_songs}(?:\s+(\d+))?$": "cmd_top_songs",
@@ -147,7 +143,7 @@ class CommandProcessor:
             rf"{prefix}{mus_repeat_off}$": "cmd_repeat_off",
             rf"{prefix}{mus_repeat_stop}$": "cmd_stop_repeat",
            rf"{prefix}{mus_next}$": "cmd_next",
-            rf"{prefix}{mus_queue_info}": "cmd_queue_info",
+            rf"{prefix}{mus_queue_info}$": "cmd_queue_info",
             rf"{prefix}{mus_duration}\s+(.+)$": "cmd_duration",
             rf"{prefix}{mus_durata}\s+(\d+)$": "cmd_at",
             rf"{prefix}{mus_when}$": "cmd_when",
@@ -315,10 +311,6 @@ class CommandProcessor:
     async def cmd_remove_queue(self, position: str, username: str, channel_id: str):
         """!remove_queue <pos> - Remove from queue."""
         return await self.services.admin_commands.cmd_remove_queue(username, position)
-
-    async def cmd_queue_info_admin(self, username: str, channel_id: str):
-        """!queue_info - Queue info."""
-        return await self.services.admin_commands.cmd_queue_info(username)
 
     async def cmd_clear_queue(self, username: str, channel_id: str):
         """!clear_queue - Clear queue."""

@@ -79,19 +79,6 @@ class TestAdminCommands:
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_cmd_coda_info(self, commands, mock_cmd):
-        """Test !coda_info command."""
-        mock_command_services = MagicMock()
-        mock_command_services.request_queue.get_all = MagicMock(return_value=[
-            {"query": "Song 1"},
-            {"query": "Song 2"},
-        ])
-        commands = AdminCommands(services=mock_command_services)
-        
-        result = await commands.cmd_coda_info(mock_cmd)
-        assert result is not None
-
-    @pytest.mark.asyncio
     async def test_cmd_unblacklist(self, commands, mock_cmd):
         """Test !unblacklist command."""
         mock_cmd.parameter = "testuser"

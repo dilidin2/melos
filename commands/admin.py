@@ -97,7 +97,7 @@ class AdminCommands:
 
         return "\n".join(lines)
 
-    async def cmd_skippa(self, username: str) -> str:
+    async def cmd_skip(self, username: str) -> str:
         """!skippa - Skips the current song."""
         if username.lower() not in [u.lower() for u in ADMIN_USERS]:
             return "⛔ You don't have permission to use this command."
@@ -107,7 +107,7 @@ class AdminCommands:
         self.audio_player.stop()
         return "⏭️ Song skipped!"
 
-    async def cmd_rimuovi_coda(self, username: str, position: str) -> str:
+    async def cmd_remove_queue(self, username: str, position: str) -> str:
         """!rimuovi_coda <position> - Removes a position from the queue.
 
         Removes the song at the specified position (1-based) from the queue.
@@ -208,20 +208,4 @@ class AdminCommands:
 
         return f"🗑️ Queue cleared: **{count}** songs removed"
 
-    async def cmd_coda_info(self, username: str) -> str:
-        """!coda_info - Shows queue information."""
-        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ You don't have permission to use this command."
-        if not self.request_queue:
-            return "📭 Queue not available."
 
-        size = self.request_queue.qsize()
-        processing = "✅ Yes" if self.request_queue.is_processing() else "❌ No"
-
-        lines = [
-            f"📊 Queue Info:",
-            f"  • Items waiting: {size}",
-            f"  • Currently playing: {processing}",
-        ]
-
-        return "\n".join(lines)

@@ -112,15 +112,6 @@ class TestAdminPermissionsCommandProcessor:
         msg = mock_services.bot.chat_message.send_public.call_args[0][1]
         assert "⛔ Non hai i permessi" in msg
 
-    @pytest.mark.asyncio
-    async def test_non_admin_blocked_coda_info(self, mock_services):
-        """Non-admin user gets permission error on !coda_info."""
-        proc = self._make_processor(mock_services, admin_users=[])
-        result = await proc.process("!coda_info", "randomuser", "ch")
-        assert result is True
-        msg = mock_services.bot.chat_message.send_public.call_args[0][1]
-        assert "⛔ Non hai i permessi" in msg
-
     # --- Admin allowed ---
 
     @pytest.mark.asyncio
@@ -290,20 +281,6 @@ class TestAdminPermissionsAdminCommands:
         cmd = self._make_admin_commands(None, mock_audio_player, None, admin_users=["admin1"])
         result = await cmd.cmd_skippa("admin1")
         assert "⏭️" in result
-
-    @pytest.mark.asyncio
-    async def test_admin_coda_info_blocks_non_admin(self, mock_request_queue):
-        """cmd_coda_info blocks non-admin at method level."""
-        cmd = self._make_admin_commands(None, None, mock_request_queue, admin_users=["admin1"])
-        result = await cmd.cmd_coda_info("randomuser")
-        assert "⛔ Non hai i permessi" in result
-
-    @pytest.mark.asyncio
-    async def test_admin_coda_info_allows_admin(self, mock_request_queue):
-        """cmd_coda_info allows admin at method level."""
-        cmd = self._make_admin_commands(None, None, mock_request_queue, admin_users=["admin1"])
-        result = await cmd.cmd_coda_info("admin1")
-        assert "📊" in result
 
     @pytest.mark.asyncio
     async def test_admin_clear_queue_blocks_non_admin(self, mock_request_queue):

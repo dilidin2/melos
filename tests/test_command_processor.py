@@ -299,14 +299,6 @@ class TestCommandProcessor:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_process_queue_info_command(self, processor, mock_command_services):
-        """Test processing !coda_info command."""
-        mock_command_services.admin_commands.cmd_coda_info = AsyncMock(return_value="Queue info")
-        
-        result = await processor.process("!coda_info", "user", "ch")
-        assert result is True
-
-    @pytest.mark.asyncio
     async def test_process_top_canzoni_command(self, processor, mock_command_services):
         """Test processing !top_canzoni command."""
         mock_command_services.analytics_commands.cmd_top_canzoni = AsyncMock(return_value="Top songs")
