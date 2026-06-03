@@ -122,7 +122,7 @@ class CommandProcessor:
         raw_patterns = {
             rf"{prefix}{sr_prefix}\s+(.+)$": "cmd_sr",
             rf"{prefix}{p_create}\s+(\w+)$": "cmd_crea",
-            rf"{prefix}{p_view}(?:\s+(.+))?$": "cmd_playlist",
+            rf"{prefix}{p_view}(?:\s+(\w+)(?:\s+(\d+))?)?$": "cmd_playlist",
             rf"{prefix}{p_add}\s+(\w+)\s+(.+)$": "cmd_aggiungi",
             rf"{prefix}{p_remove}\s+(\w+)\s+(.+)$": "cmd_rimuovi",
             rf"{prefix}{p_move}\s+(\w+)\s+(\d+)\s+(\d+)$": "cmd_sposta",
@@ -238,11 +238,13 @@ class CommandProcessor:
         """!crea <nome> - Crea una nuova playlist."""
         return await self.services.playlist_commands.cmd_crea(username, nome_playlist)
 
-    async def cmd_playlist(self, nome: str, username: str, channel_id: str):
-        """!playlist [nome] - Mostra playlist o canzoni."""
+    async def cmd_playlist(self, nome: Optional[str], page_str: Optional[str], username: str, channel_id: str):
+        """!playlist [nome] [pagina] - Mostra playlist o canzoni."""
+        page = int(page_str) if page_str else 1
         if nome is None:
             nome = None
-        return await self.services.playlist_commands.cmd_playlist(username, nome)
+            page = 1
+        return await self.services.playlist_commands.cmd_playlist(username, nome, page)
 
     async def cmd_aggiungi(
         self, nome_playlist: str, query: str, username: str, channel_id: str

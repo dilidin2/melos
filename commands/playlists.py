@@ -28,9 +28,9 @@ class PlaylistCommands:
         return f"✅ Playlist '{nome_playlist}' creata!"
 
     async def cmd_playlist(
-        self, username: str, nome_playlist: Optional[str] = None
+        self, username: str, nome_playlist: Optional[str] = None, page: int = 1
     ) -> str:
-        """!playlist [nome] - Mostra playlist o canzoni."""
+        """!playlist [nome] [pagina] - Mostra playlist o canzoni."""
         if nome_playlist is None:
             playlists = self.playlist_manager.get_user_playlists(username)
 
@@ -48,8 +48,20 @@ class PlaylistCommands:
             if not songs:
                 return f"❌ Playlist '{nome_playlist}' non trovata o vuota."
 
-            lines = [f"🎵 Playlist '{nome_playlist}':"]
-            for i, song in enumerate(songs, 1):
+            songs_per_page = 8
+            total_pages = (len(songs) + songs_per_page - 1) // songs_per_page
+
+            if page < 1:
+                page = 1
+            if page > total_pages:
+                page = total_pages
+
+            start = (page - 1) * songs_per_page
+            end = start + songs_per_page
+            page_songs = songs[start:end]
+
+            lines = [f"🎵 Playlist '{nome_playlist}' ({page}/{total_pages}):"]
+            for i, song in enumerate(page_songs, start + 1):
                 lines.append(f"  {i}. {song.query}")
 
             return "\n".join(lines)
