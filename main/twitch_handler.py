@@ -152,7 +152,6 @@ class TwitchHandler:
             self.chat.register_command("stats", self._handle_other_command)
             self.chat.register_command("top_canzoni", self._handle_other_command)
             self.chat.register_command("top_user", self._handle_other_command)
-            self.chat.register_command("export_stats", self._handle_other_command)
             self.chat.register_command("storia", self._handle_other_command)
             # Music commands
             self.chat.register_command("volume", self._handle_other_command)

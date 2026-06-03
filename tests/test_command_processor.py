@@ -187,14 +187,6 @@ class TestCommandProcessor:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_process_export_stats_json(self, processor, mock_command_services):
-        """Test processing !export_stats json command."""
-        mock_command_services.analytics_commands.cmd_export_stats = AsyncMock(return_value="Exported")
-        
-        result = await processor.process("!export_stats json", "user", "ch")
-        assert result is True
-
-    @pytest.mark.asyncio
     async def test_process_repeat_command(self, processor, mock_command_services):
         """Test processing !repeat command."""
         mock_command_services.music_commands.cmd_repeat = AsyncMock(return_value="Repeat set")

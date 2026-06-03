@@ -29,7 +29,6 @@ from main.config import (
     ANALYTICS_STATS_COMMAND,
     ANALYTICS_TOP_SONGS_COMMAND,
     ANALYTICS_TOP_USERS_COMMAND,
-    ANALYTICS_EXPORT_COMMAND,
     ANALYTICS_STORIA_COMMAND,
     MUSIC_VOLUME_COMMAND,
     MUSIC_PAUSE_COMMAND,
@@ -102,7 +101,6 @@ class CommandProcessor:
         stat_stats = re.escape(ANALYTICS_STATS_COMMAND)
         stat_top_songs = re.escape(ANALYTICS_TOP_SONGS_COMMAND)
         stat_top_users = re.escape(ANALYTICS_TOP_USERS_COMMAND)
-        stat_export = re.escape(ANALYTICS_EXPORT_COMMAND)
         stat_storia = re.escape(ANALYTICS_STORIA_COMMAND)
         mus_volume = re.escape(MUSIC_VOLUME_COMMAND)
         mus_pause = re.escape(MUSIC_PAUSE_COMMAND)
@@ -144,7 +142,6 @@ class CommandProcessor:
             rf"{prefix}{stat_stats}$": "cmd_stats",
             rf"{prefix}{stat_top_songs}(?:\s+(\d+))?$": "cmd_top_canzoni",
             rf"{prefix}{stat_top_users}(?:\s+(\d+))?$": "cmd_top_user",
-            rf"{prefix}{stat_export}\s+(json|csv)$": "cmd_export_stats",
             rf"{prefix}{mus_volume}\s+(\d+)$": "cmd_volume",
            rf"{prefix}{mus_pause}$": "cmd_pausa",
             rf"{prefix}{mus_resume}$": "cmd_riprendi",
@@ -345,10 +342,6 @@ class CommandProcessor:
         """!top_user [N] - Top utenti."""
         n = int(n) if n else 10
         return await self.services.analytics_commands.cmd_top_user(username, n)
-
-    async def cmd_export_stats(self, format: str, username: str, channel_id: str):
-        """!export_stats <formato> - Esporta stats."""
-        return await self.services.analytics_commands.cmd_export_stats(username, format)
 
     # =====================================================================
     # MUSIC COMMANDS

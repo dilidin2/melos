@@ -132,7 +132,6 @@ ADMIN_CLEAR_QUEUE_COMMAND: str = "clear_queue"
 ANALYTICS_STATS_COMMAND: str = "stats"
 ANALYTICS_TOP_SONGS_COMMAND: str = "top_canzoni"
 ANALYTICS_TOP_USERS_COMMAND: str = "top_user"
-ANALYTICS_EXPORT_COMMAND: str = "export_stats"
 ANALYTICS_STORIA_COMMAND: str = "storia"
 
 # Music control commands

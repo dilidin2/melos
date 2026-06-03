@@ -59,15 +59,6 @@ class AnalyticsCommands:
 
         return "\n".join(lines)
 
-    async def cmd_export_stats(self, username: str, format: str = "json") -> str:
-        """!export_stats <formato> - Esporta le statistiche."""
-        export = self.analytics.export_stats(format)
-
-        if format == "json":
-            return f"📦 Statistiche esportate:\n```json\n{export}\n```"
-        else:
-            return f"```\n{export}\n```"
-
     async def cmd_storia(self, username: str, n: int = 10) -> str:
         """!storia [N] - Cronologia delle ultime N canzoni riprodotte."""
         history = self.analytics.get_play_history(n)

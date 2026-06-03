@@ -91,7 +91,6 @@ The bot will connect to your Twitch channel and start listening for commands.
 | `!stats` | View analytics |
 | `!top_canzoni [N]` | Show top requested songs |
 | `!top_user [N]` | Show top requesting users |
-| `!export_stats <format>` | Export analytics (json/csv) |
 | `!storia [N]` | Play history of last N songs |
 | `!playlist <name>` | View a playlist |
 | `!crea <name>` | Create a playlist |

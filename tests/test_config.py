@@ -44,7 +44,6 @@ from main.config import (
     ANALYTICS_STATS_COMMAND,
     ANALYTICS_TOP_SONGS_COMMAND,
     ANALYTICS_TOP_USERS_COMMAND,
-    ANALYTICS_EXPORT_COMMAND,
     MUSIC_VOLUME_COMMAND,
     MUSIC_PAUSE_COMMAND,
     MUSIC_RESUME_COMMAND,
@@ -231,10 +230,6 @@ class TestConstants:
     def test_analytics_top_users_command(self):
         """Test ANALYTICS_TOP_USERS_COMMAND is 'top_user'."""
         assert ANALYTICS_TOP_USERS_COMMAND == "top_user"
-
-    def test_analytics_export_command(self):
-        """Test ANALYTICS_EXPORT_COMMAND is 'export_stats'."""
-        assert ANALYTICS_EXPORT_COMMAND == "export_stats"
 
     # Music command constants
     def test_music_volume_command(self):

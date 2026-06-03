@@ -154,33 +154,6 @@ class Analytics:
             "unique_users_month": len(set(p["username"] for p in month_plays)),
         }
 
-    def export_stats(self, format: str = "json") -> str:
-        """Esporta le statistiche in un formato specificato."""
-        if format == "json":
-            return json.dumps(
-                {
-                    "total_requests": self._total_requests,
-                    "total_plays": self._total_plays,
-                    "top_songs": self.get_top_songs(20),
-                    "top_users": self.get_top_users(20),
-                    "stats_today": self.get_stats_today(),
-                    "stats_week": self.get_stats_week(),
-                    "stats_month": self.get_stats_month(),
-                },
-                indent=2,
-            )
-        elif format == "csv":
-            # Export CSV delle canzoni
-            lines = ["Title,Count"]
-            for title, count in sorted(
-                self._songs_by_title.items(), key=lambda x: x[1], reverse=True
-            ):
-                lines.append(f'"{title}",{count}')
-
-            return "\n".join(lines)
-
-        return "Formato non supportato"
-
     def get_play_history(self, n: int = 20) -> list[dict]:
         """Ottiene le ultime N riproduzioni dalla cronologia."""
         return self._play_history[-n:]

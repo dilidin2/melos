@@ -113,7 +113,6 @@ def mock_analytics():
     })
     analytics.get_top_songs = MagicMock(return_value=[])
     analytics.get_top_users = MagicMock(return_value=[])
-    analytics.export_stats = MagicMock(return_value="{}")
     return analytics
 
 
@@ -209,7 +208,6 @@ def mock_config():
         "ANALYTICS_STATS_COMMAND": "stats",
         "ANALYTICS_TOP_SONGS_COMMAND": "top_canzoni",
         "ANALYTICS_TOP_USERS_COMMAND": "top_user",
-        "ANALYTICS_EXPORT_COMMAND": "export_stats",
         "MUSIC_VOLUME_COMMAND": "volume",
         "MUSIC_PAUSE_COMMAND": "pausa",
         "MUSIC_RESUME_COMMAND": "riprendi",

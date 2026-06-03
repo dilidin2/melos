@@ -87,35 +87,3 @@ class TestAnalyticsCommands:
         result = await commands.cmd_top_user(mock_cmd)
         assert result is not None
 
-    @pytest.mark.asyncio
-    async def test_cmd_export_stats_json(self, mock_cmd):
-        """Test !export_stats json command."""
-        mock_cmd.parameter = "json"
-        mock_command_services = MagicMock()
-        mock_command_services.analytics.export_stats = MagicMock(return_value='{"total_requests": 100}')
-        commands = AnalyticsCommands(services=mock_command_services)
-        
-        result = await commands.cmd_export_stats(mock_cmd)
-        assert result is not None
-
-    @pytest.mark.asyncio
-    async def test_cmd_export_stats_csv(self, mock_cmd):
-        """Test !export_stats csv command."""
-        mock_cmd.parameter = "csv"
-        mock_command_services = MagicMock()
-        mock_command_services.analytics.export_stats = MagicMock(return_value="Title,Count\nSong 1,10")
-        commands = AnalyticsCommands(services=mock_command_services)
-        
-        result = await commands.cmd_export_stats(mock_cmd)
-        assert result is not None
-
-    @pytest.mark.asyncio
-    async def test_cmd_export_stats_invalid_format(self, mock_cmd):
-        """Test !export_stats with invalid format."""
-        mock_cmd.parameter = "xml"
-        mock_command_services = MagicMock()
-        mock_command_services.analytics.export_stats = MagicMock(return_value="Formato non supportato")
-        commands = AnalyticsCommands(services=mock_command_services)
-        
-        result = await commands.cmd_export_stats(mock_cmd)
-        assert "non supportato" in result

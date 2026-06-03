@@ -29,7 +29,7 @@ class UtilityCommands:
         if not command:
             return [
                 """📚 1/3 [MUSICA]: !sr <url/titolo> • !random [N] • !duration <canzone> • !durata <N> • !quando | [PLAYLIST]: !crea <nome> • !playlist [n] • !aggiungi <pl> <song> • !rimuovi <pl> <pos> • !sposta <pl> <p1> <p2> • !svuota <pl> • !lista_playlist • !pompa <pl> [N]""",
-                """📚 2/3 [MOD]: !whitelist/!blacklist/!unblacklist <user> • !whitelist_list/!blacklist_list • !skippa • !rimuovi_coda <pos> • !clear_queue • !coda_info | [STATS]: !stats • !top_canzoni [N] • !top_user [N] • !export_stats • !storia [N]""",
+                """📚 2/3 [MOD]: !whitelist/!blacklist/!unblacklist <user> • !whitelist_list/!blacklist_list • !skippa • !rimuovi_coda <pos> • !clear_queue • !coda_info | [STATS]: !stats • !top_canzoni [N] • !top_user [N] • !storia [N]""",
                 """📚 3/3 [CTRL]: !volume <0-100> • !pausa/!riprendi • !repeat/!repeat_off • !ripeti/!stop_ripeti • !next • !queue_info | [UTIL]: !help [cmd] • !version • !uptime""",
             ]
 
@@ -56,7 +56,6 @@ class UtilityCommands:
                 "stats": "!stats - Visualizza statistiche generali",
                 "top_canzoni": "!top_canzoni [N] - Top N canzoni richieste",
                 "top_user": "!top_user [N] - Top N utenti",
-                "export_stats": "!export_stats <formato> - Esporta statistiche (json/csv)",
                "volume": "!volume <0-100> - Imposta volume",
                 "pausa": "!pausa - Metti in pausa la riproduzione",
                 "riprendi": "!riprendi - Riprendi la riproduzione dalla pausa",

@@ -149,32 +149,6 @@ class TestAnalytics:
         assert stats["period"] == "last_30_days"
         assert stats["total_requests_month"] == 1
 
-    def test_export_stats_json(self, analytics):
-        """Test exporting stats as JSON."""
-        analytics.record_request("user1", "song1")
-        
-        export = analytics.export_stats("json")
-        parsed = json.loads(export)
-        assert "total_requests" in parsed
-        assert "total_plays" in parsed
-        assert "top_songs" in parsed
-        assert "top_users" in parsed
-
-    def test_export_stats_csv(self, analytics):
-        """Test exporting stats as CSV."""
-        analytics.record_request("user1", "song1")
-        analytics.record_request("user2", "song2")
-        
-        export = analytics.export_stats("csv")
-        assert "Title,Count" in export
-        assert "song1" in export
-        assert "song2" in export
-
-    def test_export_stats_invalid_format(self, analytics):
-        """Test exporting with invalid format."""
-        export = analytics.export_stats("xml")
-        assert export == "Formato non supportato"
-
     def test_stats_persistence(self, temp_dir):
         """Test stats are persisted to disk."""
         analytics1 = Analytics(data_dir=temp_dir)
