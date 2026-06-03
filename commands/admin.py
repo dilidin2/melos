@@ -1,4 +1,4 @@
-"""Admin Commands - Comandi di amministrazione e moderazione."""
+"""Admin Commands - Administration and moderation commands."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class AdminCommands:
-    """Gestisce tutti i comandi admin e moderation."""
+    """Handles all admin and moderation commands."""
 
     def __init__(
         self,
@@ -26,114 +26,114 @@ class AdminCommands:
         self.admin_handler = admin_handler
         self.audio_player = audio_player
         self.request_queue = request_queue
-        self._bot = bot  # Riferimento al bot per persistenza coda
+        self._bot = bot  # Reference to bot for queue persistence
 
     async def cmd_whitelist(self, username: str, target_user: str) -> str:
-        """!whitelist <username> - Aggiunge un utente alla whitelist."""
+        """!whitelist <username> - Adds a user to the whitelist."""
         if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ Non hai i permessi per usare questo comando."
+            return "⛔ You don't have permission to use this command."
         if not self.admin_handler:
-            return "❌ Admin handler non disponibile."
+            return "❌ Admin handler not available."
 
         if self.admin_handler.add_whitelist(target_user):
-            return f"✅ {target_user} aggiunto alla whitelist."
-        return f"❌ {target_user} è già nella whitelist."
+            return f"✅ {target_user} added to whitelist."
+        return f"❌ {target_user} is already on the whitelist."
 
     async def cmd_blacklist(self, username: str, target_user: str) -> str:
-        """!blacklist <username> - Mette un utente in blacklist."""
+        """!blacklist <username> - Puts a user on the blacklist."""
         if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ Non hai i permessi per usare questo comando."
+            return "⛔ You don't have permission to use this command."
         if not self.admin_handler:
-            return "❌ Admin handler non disponibile."
+            return "❌ Admin handler not available."
 
         if self.admin_handler.add_blacklist(target_user):
-            return f"🚫 {target_user} messo in blacklist."
-        return f"❌ {target_user} è già in blacklist."
+            return f"🚫 {target_user} added to blacklist."
+        return f"❌ {target_user} is already on the blacklist."
 
     async def cmd_unblacklist(self, username: str, target_user: str) -> str:
-        """!unblacklist <username> - Rimuove un utente dalla blacklist."""
+        """!unblacklist <username> - Removes a user from the blacklist."""
         if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ Non hai i permessi per usare questo comando."
+            return "⛔ You don't have permission to use this command."
         if not self.admin_handler:
-            return "❌ Admin handler non disponibile."
+            return "❌ Admin handler not available."
 
         if self.admin_handler.remove_blacklist(target_user):
-            return f"✅ {target_user} rimosso dalla blacklist."
-        return f"❌ {target_user} non era in blacklist."
+            return f"✅ {target_user} removed from blacklist."
+        return f"❌ {target_user} was not on the blacklist."
 
     async def cmd_whitelist_list(self, username: str) -> str:
-        """!whitelist_list - Mostra tutti gli utenti whitelist."""
+        """!whitelist_list - Shows all whitelisted users."""
         if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ Non hai i permessi per usare questo comando."
+            return "⛔ You don't have permission to use this command."
         if not self.admin_handler:
-            return "❌ Admin handler non disponibile."
+            return "❌ Admin handler not available."
 
         users = self.admin_handler.get_whitelist_list()
 
         if not users:
-            return "📭 Whitelist vuota."
+            return "📭 Whitelist is empty."
 
-        lines = [f"🛡️ Whitelist ({len(users)} utenti):"]
+        lines = [f"🛡️ Whitelist ({len(users)} users):"]
         for user in users:
             lines.append(f"  • {user}")
 
         return "\n".join(lines)
 
     async def cmd_blacklist_list(self, username: str) -> str:
-        """!blacklist_list - Mostra tutti gli utenti blacklist."""
+        """!blacklist_list - Shows all blacklisted users."""
         if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ Non hai i permessi per usare questo comando."
+            return "⛔ You don't have permission to use this command."
         if not self.admin_handler:
-            return "❌ Admin handler non disponibile."
+            return "❌ Admin handler not available."
 
         users = self.admin_handler.get_blacklist_list()
 
         if not users:
-            return "📭 Blacklist vuota."
+            return "📭 Blacklist is empty."
 
-        lines = [f"🚫 Blacklist ({len(users)} utenti):"]
+        lines = [f"🚫 Blacklist ({len(users)} users):"]
         for user in users:
             lines.append(f"  • {user}")
 
         return "\n".join(lines)
 
     async def cmd_skippa(self, username: str) -> str:
-        """!skippa - Salta la canzone corrente."""
+        """!skippa - Skips the current song."""
         if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ Non hai i permessi per usare questo comando."
+            return "⛔ You don't have permission to use this command."
         if not self.audio_player or not self.audio_player.is_playing():
-            return "❌ Nessuna canzone in riproduzione da saltare."
+            return "❌ No song currently playing to skip."
 
         self.audio_player.stop()
-        return "⏭️ Canzone saltata!"
+        return "⏭️ Song skipped!"
 
     async def cmd_rimuovi_coda(self, username: str, position: str) -> str:
-        """!rimuovi_coda <posizione> - Rimuove una posizione dalla coda.
+        """!rimuovi_coda <position> - Removes a position from the queue.
 
-        Rimuove la canzone alla posizione specificata (1-based) dalla coda.
-        La posizione 1 è la prossima canzone da riprodurre.
+        Removes the song at the specified position (1-based) from the queue.
+        Position 1 is the next song to play.
         """
         if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ Non hai i permessi per usare questo comando."
+            return "⛔ You don't have permission to use this command."
         if not self.request_queue:
-            return "❌ Impossibile accedere alla coda."
+            return "❌ Unable to access the queue."
 
         try:
             pos = int(position)
         except ValueError:
-            return "❌ Usa !rimuovi_coda <numero> (es: !rimuovi_coda 3)"
+            return "❌ Use !rimuovi_coda <number> (e.g.: !rimuovi_coda 3)"
 
         if pos < 1:
-            return "❌ La posizione deve essere un numero positivo (minimo 1)."
+            return "❌ Position must be a positive number (minimum 1)."
 
-        # Ottieni tutti gli elementi della coda
+        # Get all queue items
         items = self.request_queue.get_items(count=1000)
 
         if pos > len(items):
-            return f"❌ Posizione non valida. La coda ha solo {len(items)} canzoni."
+            return f"❌ Invalid position. The queue only has {len(items)} songs."
 
-        # Rimuovi l'elemento dalla coda asyncio.Queue
-        # Creiamo una nuova lista senza l'elemento da rimuovere
+        # Remove the item from the asyncio.Queue
+        # Create a new list without the item to remove
         queue_items = list(self.request_queue.queue._queue)
         if pos - 1 < len(queue_items):
             removed_item = queue_items.pop(pos - 1)
@@ -147,16 +147,16 @@ class AdminCommands:
                     pass
             self.request_queue.queue = new_queue
 
-            logger.info(f"Elemento rimosso dalla coda (posizione {pos}): {removed_item.query} da @{removed_item.username}")
+            logger.info(f"Item removed from queue (position {pos}): {removed_item.query} by @{removed_item.username}")
 
-            # Ottieni il titolo per il messaggio
+            # Get the title for the message
             title = removed_item.query
             if self._bot and hasattr(self._bot, 'music_downloader'):
                 song_info = self._bot.music_downloader.get_song_info(removed_item.query)
                 if song_info:
                     title = song_info.get("title", removed_item.query)
 
-            # Persisti la modifica
+            # Persist the change
             if self._bot and hasattr(self._bot, '_persist_queue'):
                 import asyncio
                 try:
@@ -164,28 +164,28 @@ class AdminCommands:
                 except Exception:
                     pass
 
-            return f"🗑️ Rimossa **{title}** dalla coda (posizione {pos})"
+            return f"🗑️ Removed **{title}** from queue (position {pos})"
         else:
-            return f"❌ Impossibile rimuovere la posizione {pos}."
+            return f"❌ Unable to remove position {pos}."
 
     async def cmd_clear_queue(self, username: str) -> str:
-        """!clear_queue - Svuota completamente la coda.
+        """!clear_queue - Completely clears the queue.
 
-        Rimuove tutte le canzoni dalla coda. Questa operazione non può
-        essere annullata.
+        Removes all songs from the queue. This operation cannot
+        be undone.
         """
         if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ Non hai i permessi per usare questo comando."
+            return "⛔ You don't have permission to use this command."
         if not self.request_queue:
-            return "❌ Impossibile accedere alla coda."
+            return "❌ Unable to access the queue."
 
         items = self.request_queue.get_items(count=1000)
         count = len(items)
 
         if count == 0:
-            return "📭 La coda è già vuota."
+            return "📭 The queue is already empty."
 
-        # Svuota la coda asyncio.Queue
+        # Clear the asyncio.Queue
         queue_items = list(self.request_queue.queue._queue)
         from asyncio import Queue
         new_queue = Queue(maxsize=self.request_queue.max_size)
@@ -196,9 +196,9 @@ class AdminCommands:
                 pass
         self.request_queue.queue = new_queue
 
-        logger.info(f"Coda svuotata da @{username}: {count} canzoni rimosse")
+        logger.info(f"Queue cleared by @{username}: {count} songs removed")
 
-        # Persisti la modifica
+        # Persist the change
         if self._bot and hasattr(self._bot, '_persist_queue'):
             import asyncio
             try:
@@ -206,22 +206,22 @@ class AdminCommands:
             except Exception:
                 pass
 
-        return f"🗑️ Coda svuotata: **{count}** canzoni rimosse"
+        return f"🗑️ Queue cleared: **{count}** songs removed"
 
     async def cmd_coda_info(self, username: str) -> str:
-        """!coda_info - Mostra informazioni sulla coda."""
+        """!coda_info - Shows queue information."""
         if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ Non hai i permessi per usare questo comando."
+            return "⛔ You don't have permission to use this command."
         if not self.request_queue:
-            return "📭 Coda non disponibile."
+            return "📭 Queue not available."
 
         size = self.request_queue.qsize()
-        processing = "✅ Sì" if self.request_queue.is_processing() else "❌ No"
+        processing = "✅ Yes" if self.request_queue.is_processing() else "❌ No"
 
         lines = [
-            f"📊 Info Coda:",
-            f"  • Elementi in attesa: {size}",
-            f"  • In riproduzione: {processing}",
+            f"📊 Queue Info:",
+            f"  • Items waiting: {size}",
+            f"  • Currently playing: {processing}",
         ]
 
         return "\n".join(lines)

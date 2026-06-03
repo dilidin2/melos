@@ -1,4 +1,4 @@
-"""Playlist Manager - Gestisce le playlist degli utenti."""
+"""Playlist Manager - Manages user playlists."""
 
 import json
 import os
@@ -11,12 +11,12 @@ from typing import Optional
 
 @dataclass
 class PlaylistSong:
-    """Rappresenta una canzone in una playlist."""
+    """Represents a song in a playlist."""
 
     query: str
     file_path: str
     username_original: str
-    aggiunta_al: str = field(default_factory=lambda: datetime.now().isoformat())
+    added_at: str = field(default_factory=lambda: datetime.now().isoformat())
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -28,40 +28,40 @@ class PlaylistSong:
 
 @dataclass
 class Playlist:
-    """Rappresenta una playlist utente."""
+    """Represents a user playlist."""
 
     id: str
-    nome: str
-    canzoni: list[PlaylistSong] = field(default_factory=list)
-    creata_al: str = field(default_factory=lambda: datetime.now().isoformat())
-    ultima_modificata: str = field(default_factory=lambda: datetime.now().isoformat())
+    name: str
+    songs: list[PlaylistSong] = field(default_factory=list)
+    created_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    last_modified: str = field(default_factory=lambda: datetime.now().isoformat())
     recently_pumped_queries: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
             "id": self.id,
-            "nome": self.nome,
-            "canzoni": [c.to_dict() for c in self.canzoni],
-            "creata_al": self.creata_al,
-            "ultima_modificata": self.ultima_modificata,
+            "name": self.name,
+            "songs": [c.to_dict() for c in self.songs],
+            "created_at": self.created_at,
+            "last_modified": self.last_modified,
             "recently_pumped_queries": self.recently_pumped_queries,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "Playlist":
-        canzoni = [PlaylistSong.from_dict(c) for c in data.get("canzoni", [])]
+        songs = [PlaylistSong.from_dict(c) for c in data.get("songs", [])]
         return cls(
             id=data["id"],
-            nome=data["nome"],
-            canzoni=canzoni,
-            creata_al=data.get("creata_al"),
-            ultima_modificata=data.get("ultima_modificata"),
+            name=data["name"],
+            songs=songs,
+            created_at=data.get("created_at"),
+            last_modified=data.get("last_modified"),
             recently_pumped_queries=data.get("recently_pumped_queries", []),
         )
 
 
 class PlaylistManager:
-    """Gestisce tutte le playlist degli utenti."""
+    """Manages all user playlists."""
 
     def __init__(self, data_dir: str = "data/playlists"):
         self.data_dir = Path(data_dir)
@@ -71,11 +71,11 @@ class PlaylistManager:
         ] = {}  # user -> {playlist_id: Playlist}
 
     def _get_user_file(self, username: str) -> Path:
-        """Ottieni il percorso del file JSON per un utente."""
+        """Gets the JSON file path for a user."""
         return self.data_dir / f"{username}.json"
 
     def _load_user_playlists(self, username: str) -> dict[str, Playlist]:
-        """Carica le playlist di un utente dal disco."""
+        """Loads a user's playlists from disk."""
         user_file = self._get_user_file(username)
 
         if not user_file.exists():
@@ -92,11 +92,11 @@ class PlaylistManager:
             return playlists
 
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Errore nel caricamento playlist per {username}: {e}")
+            print(f"Error loading playlists for {username}: {e}")
             return {}
 
     def _save_user_playlists(self, username: str):
-        """Salva le playlist di un utente sul disco."""
+        """Saves a user's playlists to disk."""
         user_file = self._get_user_file(username)
 
         if username not in self._playlists:
@@ -109,21 +109,21 @@ class PlaylistManager:
         with open(user_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
-    def create_playlist(self, username: str, nome: str) -> Optional[Playlist]:
-        """Crea una nuova playlist per un utente."""
+    def create_playlist(self, username: str, name: str) -> Optional[Playlist]:
+        """Creates a new playlist for a user."""
         if username not in self._playlists:
             self._playlists[username] = {}
 
-        # Controlla se esiste già una playlist con questo nome
+        # Check if a playlist with this name already exists
         for playlist in self._playlists[username].values():
-            if playlist.nome.lower() == nome.lower():
+            if playlist.name.lower() == name.lower():
                 return None
 
         import uuid
 
         playlist_id = str(uuid.uuid4().int)
 
-        playlist = Playlist(id=playlist_id, nome=nome)
+        playlist = Playlist(id=playlist_id, name=name)
 
         self._playlists[username][playlist_id] = playlist
         self._save_user_playlists(username)
@@ -131,25 +131,25 @@ class PlaylistManager:
         return playlist
 
     def get_user_playlists(self, username: str) -> list[Playlist]:
-        """Ottieni tutte le playlist di un utente."""
+        """Gets all playlists for a user."""
         if username not in self._playlists:
             self._playlists[username] = self._load_user_playlists(username)
 
         return list(self._playlists[username].values())
 
     def get_playlist(self, username: str, playlist_id: str) -> Optional[Playlist]:
-        """Ottieni una playlist specifica."""
+        """Gets a specific playlist."""
         if username not in self._playlists:
             self._playlists[username] = self._load_user_playlists(username)
 
         return self._playlists[username].get(playlist_id)
 
-    def get_playlist_by_name(self, username: str, nome: str) -> Optional[Playlist]:
-        """Ottieni una playlist per nome."""
+    def get_playlist_by_name(self, username: str, name: str) -> Optional[Playlist]:
+        """Gets a playlist by name."""
         playlists = self.get_user_playlists(username)
 
         for playlist in playlists:
-            if playlist.nome.lower() == nome.lower():
+            if playlist.name.lower() == name.lower():
                 return playlist
 
         return None
@@ -162,7 +162,7 @@ class PlaylistManager:
         file_path: str,
         original_user: str,
     ) -> bool:
-        """Aggiunge una canzone a una playlist."""
+        """Adds a song to a playlist."""
         playlist = self.get_playlist_by_name(username, playlist_name)
 
         if not playlist:
@@ -172,8 +172,8 @@ class PlaylistManager:
             query=query, file_path=file_path, username_original=original_user
         )
 
-        playlist.canzoni.append(song)
-        playlist.ultima_modificata = datetime.now().isoformat()
+        playlist.songs.append(song)
+        playlist.last_modified = datetime.now().isoformat()
 
         self._save_user_playlists(username)
 
@@ -182,29 +182,29 @@ class PlaylistManager:
     def remove_song_from_playlist(
         self, username: str, playlist_name: str, index_or_name: str
     ) -> bool:
-        """Rimuove una canzone da una playlist per indice o nome."""
+        """Removes a song from a playlist by index or name."""
         playlist = self.get_playlist_by_name(username, playlist_name)
 
         if not playlist:
             return False
 
         try:
-            # Prova a interpretare come numero
+            # Try to interpret as a number
             index = int(index_or_name) - 1
 
-            if 0 <= index < len(playlist.canzoni):
-                playlist.canzoni.pop(index)
-                playlist.ultima_modificata = datetime.now().isoformat()
+            if 0 <= index < len(playlist.songs):
+                playlist.songs.pop(index)
+                playlist.last_modified = datetime.now().isoformat()
                 self._save_user_playlists(username)
                 return True
             return False
 
         except ValueError:
-            # Cerca per nome/titolo
-            for i, song in enumerate(playlist.canzoni):
+            # Search by name/title
+            for i, song in enumerate(playlist.songs):
                 if index_or_name.lower() in song.query.lower():
-                    playlist.canzoni.pop(i)
-                    playlist.ultima_modificata = datetime.now().isoformat()
+                    playlist.songs.pop(i)
+                    playlist.last_modified = datetime.now().isoformat()
                     self._save_user_playlists(username)
                     return True
 
@@ -213,24 +213,24 @@ class PlaylistManager:
     def swap_songs_in_playlist(
         self, username: str, playlist_name: str, index1: int, index2: int
     ) -> bool:
-        """Scambia due canzoni in una playlist."""
+        """Swaps two songs in a playlist."""
         playlist = self.get_playlist_by_name(username, playlist_name)
 
         if not playlist:
             return False
 
         try:
-            # Converte da 1-based a 0-based
+            # Converts from 1-based to 0-based
             idx1 = int(index1) - 1
             idx2 = int(index2) - 1
 
-            if 0 <= idx1 < len(playlist.canzoni) and 0 <= idx2 < len(playlist.canzoni):
-                playlist.canzoni[idx1], playlist.canzoni[idx2] = (
-                    playlist.canzoni[idx2],
-                    playlist.canzoni[idx1],
+            if 0 <= idx1 < len(playlist.songs) and 0 <= idx2 < len(playlist.songs):
+                playlist.songs[idx1], playlist.songs[idx2] = (
+                    playlist.songs[idx2],
+                    playlist.songs[idx1],
                 )
 
-                playlist.ultima_modificata = datetime.now().isoformat()
+                playlist.last_modified = datetime.now().isoformat()
                 self._save_user_playlists(username)
                 return True
 
@@ -240,14 +240,14 @@ class PlaylistManager:
             return False
 
     def clear_playlist(self, username: str, playlist_name: str) -> bool:
-        """Svuota una playlist."""
+        """Clears a playlist."""
         playlist = self.get_playlist_by_name(username, playlist_name)
 
         if not playlist:
             return False
 
-        playlist.canzoni.clear()
-        playlist.ultima_modificata = datetime.now().isoformat()
+        playlist.songs.clear()
+        playlist.last_modified = datetime.now().isoformat()
 
         self._save_user_playlists(username)
 
@@ -256,46 +256,46 @@ class PlaylistManager:
     def get_playlist_songs(
         self, username: str, playlist_name: str
     ) -> list[PlaylistSong]:
-        """Ottiene tutte le canzoni di una playlist."""
+        """Gets all songs in a playlist."""
         playlist = self.get_playlist_by_name(username, playlist_name)
 
         if not playlist:
             return []
 
-        return playlist.canzoni
+        return playlist.songs
 
     def pompa_songs(
         self, username: str, playlist_name: str, n: int = 5
     ) -> list[PlaylistSong]:
-        """Seleziona N canzoni random dalla playlist, escludendo le ultime pompate.
-        
-        Sliding window: ogni chiamata dimentica la precedente e ne seleziona N nuove.
-        Se non ci sono canzoni disponibili (tutte usate), resetta il tracking.
+        """Selects N random songs from the playlist, excluding the last pumped ones.
+
+        Sliding window: each call forgets the previous one and selects N new ones.
+        If no songs are available (all used), resets the tracking.
         """
         playlist = self.get_playlist_by_name(username, playlist_name)
 
         if not playlist:
             return []
 
-        if len(playlist.canzoni) == 0:
+        if len(playlist.songs) == 0:
             return []
 
-        # Filtra le canzoni non recentemente pompate
+        # Filter songs not recently pumped
         excluded = set(playlist.recently_pumped_queries)
-        available = [s for s in playlist.canzoni if s.query not in excluded]
+        available = [s for s in playlist.songs if s.query not in excluded]
 
-        # Se nessuna disponibile, resetta il tracking
+        # If none available, reset tracking
         if not available:
             playlist.recently_pumped_queries = []
-            available = list(playlist.canzoni)
+            available = list(playlist.songs)
 
-        # Prendi fino a N canzoni random
+        # Take up to N random songs
         count = min(n, len(available))
         selected = random.sample(available, count)
 
-        # Aggiorna il tracking con le query delle canzoni selezionate
+        # Update tracking with the selected songs' queries
         playlist.recently_pumped_queries = [s.query for s in selected]
-        playlist.ultima_modificata = datetime.now().isoformat()
+        playlist.last_modified = datetime.now().isoformat()
 
         self._save_user_playlists(username)
 

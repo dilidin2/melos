@@ -19,9 +19,9 @@ if TYPE_CHECKING:
 
 @dataclass
 class CommandServices:
-    """DI container - tutti i servizi iniettati esplicitamente.
-    
-    Sostituisce l'accoppiamento dinamico self.bot.xxx con dipendenze esplicite.
+    """DI container - all services injected explicitly.
+
+    Replaces dynamic self.bot.xxx coupling with explicit dependencies.
     """
     # Command handlers (commands layer)
     playlist_commands: Optional["PlaylistCommands"] = None

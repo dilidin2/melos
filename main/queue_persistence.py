@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Queue Persistence - Persistenza della coda delle richieste
+Queue Persistence - Persistence of the request queue
 
-Implementa un layer di persistenza ibrido che:
-- Mantiene asyncio.Queue per il runtime (performance + thread-safety)
-- Aggiunge un QueuePersistence layer per salvataggio su disco
-- Garantisce atomicità con file temporaneo + rename
-- Preserva i timestamp originali di added_at
+Implements a hybrid persistence layer that:
+- Keeps asyncio.Queue for runtime (performance + thread-safety)
+- Adds a QueuePersistence layer for disk saving
+- Guarantees atomicity with temp file + rename
+- Preserves original added_at timestamps
 """
 
 import asyncio
@@ -18,7 +18,7 @@ from loguru import logger
 
 
 class QueuePersistence:
-    """Layer di persistenza per la coda canzoni."""
+    """Persistence layer for the song queue."""
 
     def __init__(self, queue_file: str = "data/queue.json"):
         self.queue_file = Path(queue_file)
@@ -26,23 +26,23 @@ class QueuePersistence:
         self._save_lock = asyncio.Lock()
 
     async def load(self) -> List[Dict[str, Any]]:
-        """Carica la coda dal disco all'avvio."""
+        """Loads the queue from disk on startup."""
         if not self.queue_file.exists():
-            logger.info("Nessun file queue trovato, avvio con coda vuota")
+            logger.info("No queue file found, starting with empty queue")
             return []
 
         try:
             content = await asyncio.to_thread(self.queue_file.read_text)
             data = json.loads(content)
             songs = data.get("songs", [])
-            logger.info(f"Caricate {len(songs)} richieste dalla persistenza")
+            logger.info(f"Loaded {len(songs)} requests from persistence")
             return songs
         except Exception as e:
-            logger.error(f"Errore caricamento queue: {e}")
+            logger.error(f"Error loading queue: {e}")
             return []
 
     async def save(self, songs: List[Dict[str, Any]]) -> bool:
-        """Salva atomicamente la coda su disco."""
+        """Atomically saves the queue to disk."""
         async with self._save_lock:
             temp_file = self.queue_file.with_suffix(".tmp")
 
@@ -56,16 +56,16 @@ class QueuePersistence:
                 content = json.dumps(data, indent=2, default=str)
                 await asyncio.to_thread(temp_file.write_text, content)
                 temp_file.replace(self.queue_file)  # Atomic rename
-                logger.debug(f"Queue salvata: {len(songs)} canzoni")
+                logger.debug(f"Queue saved: {len(songs)} songs")
                 return True
             except Exception as e:
-                logger.error(f"Errore salvataggio queue: {e}")
+                logger.error(f"Error saving queue: {e}")
                 if temp_file.exists():
                     temp_file.unlink()
                 return False
 
     async def backup(self) -> Optional[Path]:
-        """Crea un backup del file corrente."""
+        """Creates a backup of the current file."""
         if not self.queue_file.exists():
             return None
 
@@ -74,21 +74,21 @@ class QueuePersistence:
 
             backup_path = self.queue_file.with_suffix(".bak")
             await asyncio.to_thread(shutil.copy2, self.queue_file, backup_path)
-            logger.info(f"Backup creato: {backup_path}")
+            logger.info(f"Backup created: {backup_path}")
             return backup_path
         except Exception as e:
-            logger.error(f"Errore durante il backup: {e}")
+            logger.error(f"Error during backup: {e}")
             return None
 
 
 class SongRequestPersistence:
-    """Gestisce la persistenza specifica per le canzoni (validazione file)."""
+    """Manages song-specific persistence (file validation)."""
 
     def __init__(self, downloads_dir: str = "downloads"):
         self.downloads_dir = Path(downloads_dir)
 
     async def validate_song_exists(self, query: str, username: str) -> bool:
-        """Valida che una canzone ripristinata esista ancora nel filesystem."""
+        """Validates that a restored song still exists in the filesystem."""
         import re
 
         sanitized = re.sub(r"[^\w\s\-]", "", query)
@@ -98,8 +98,8 @@ class SongRequestPersistence:
             expected_path = self.downloads_dir / f"{username} - {sanitized}{ext}"
 
             if await asyncio.to_thread(expected_path.exists):
-                logger.info(f"Canzone verificata: {query}")
+                logger.info(f"Song verified: {query}")
                 return True
 
-        logger.warning(f"File canzone non trovato: {query} da @{username}")
+        logger.warning(f"Song file not found: {query} from @{username}")
         return False

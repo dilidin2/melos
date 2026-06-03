@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Main entry point for Twitch Song Request Bot.
+"""Main entry point for the Twitch music request bot.
 
-This is the main executable that starts the bot with all new features.
+This is the main executable that starts the bot with all features.
 """
 
 import asyncio

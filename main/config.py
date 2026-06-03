@@ -6,114 +6,114 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ====================
-# CONFIGURAZIONE TWITCH
+# TWITCH CONFIGURATION
 # ====================
 
-# Client ID ottenuto da https://dev.twitch.tv/console
+# Client ID obtained from https://dev.twitch.tv/console
 TWITCH_CLIENT_ID: str = os.getenv("TWITCH_CLIENT_ID", "")
 
-# Client Secret ottenuto da https://dev.twitch.tv/console
+# Client Secret obtained from https://dev.twitch.tv/console
 TWITCH_CLIENT_SECRET: str = os.getenv("TWITCH_CLIENT_SECRET", "")
 
-# Redirect URL per OAuth flow (deve corrispondere a quello configurato in Twitch Dev Console)
+# Redirect URL for OAuth flow (must match the one configured in Twitch Dev Console)
 OAUTH_REDIRECT_URI: str = os.getenv("OAUTH_REDIRECT_URI", "http://localhost:17563")
 
-# Canale Twitch a cui connettersi (nome del canale SENZA #)
+# Twitch channel to connect to (channel name WITHOUT #)
 TARGET_CHANNEL: str = os.getenv("TARGET_CHANNEL", "")
 
 # ====================
-# CONFIGURAZIONE COMANDI
+# COMMAND CONFIGURATION
 # ====================
 
-# Prefix del comando per richiedere canzoni
+# Command prefix for song requests
 CHAT_COMMAND_PREFIX: str = "!"
 
-# Comando per richiedere una canzone
+# Command to request a song
 SONG_REQUEST_COMMAND: str = "sr"
 
 # ====================
-# CONFIGURAZIONE CANZONI
+# SONG CONFIGURATION
 # ====================
 
-# Durata massima della canzone in secondi (15 minuti = 900 secondi)
+# Maximum song duration in seconds (15 minutes = 900 seconds)
 MAX_DURATION_SECONDS: int = 900
 
-# Qualità audio desiderata (in kbps)
+# Desired audio quality (in kbps)
 AUDIO_QUALITY: int = 192
 
-# Formato audio
+# Audio format
 AUDIO_FORMAT: str = "mp3"
 
 # ====================
-# CONFIGURAZIONE DOWNLOAD
+# DOWNLOAD CONFIGURATION
 # ====================
 
-# Directory di download per i file audio
+# Download directory for audio files
 DOWNLOAD_DIR: str = os.getenv("DOWNLOAD_DIR", "./downloads")
 
 # ====================
-# CONFIGURAZIONE THREADING
+# THREADING CONFIGURATION
 # ====================
 
-# Numero massimo di thread concorrenti
+# Maximum number of concurrent threads
 MAX_WORKERS: int = 5
 
-# Timeout per le operazioni di download
+# Timeout for download operations
 DOWNLOAD_TIMEOUT: int = 60
 
 # ====================
-# CONFIGURAZIONE YOUTUBE
+# YOUTUBE CONFIGURATION
 # ====================
 
-# Categoria filtrata (solo "Music")
+# Filtered category (only "Music")
 YOUTUBE_CATEGORY: str = "Music"
 
 # ====================
-# CONFIGURAZIONE LOGGING
+# LOGGING CONFIGURATION
 # ====================
 
-# Livello di log (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+# Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
 
-# File di log
+# Log file
 LOG_FILE: str = os.getenv("LOG_FILE", "twitch_sr.log")
 
 # ====================
-# CONFIGURAZIONE QUEUE
+# QUEUE CONFIGURATION
 # ====================
 
-# Dimensione massima della coda
+# Maximum queue size
 MAX_QUEUE_SIZE: int = 50
 
 # ====================
-# CONFIGURAZIONE EXTRA (Feature aggiuntive)
+# EXTRA CONFIGURATION (Additional features)
 # ====================
 
-# Admin users (Twitch nicknames con permessi speciali)
-# Configurabile via variabile d'ambiente ADMIN_USERS (es: "user1,user2,user3")
+# Admin users (Twitch nicknames with special permissions)
+# Configurable via ADMIN_USERS environment variable (e.g. "user1,user2,user3")
 ADMIN_USERS: list[str] = [x.strip().lower() for x in os.getenv("ADMIN_USERS", "").split(",") if x.strip()]
 
-# Whitelist users (possono richiedere anche senza follower)
+# Whitelist users (can request even without following)
 WHITELIST_USERS: list[str] = []
 
-# Blacklist users (non possono usare il bot)
+# Blacklist users (cannot use the bot)
 BLACKLIST_USERS: list[str] = []
 
 # ====================
-# CONFIGURAZIONE COMANDI AVANZATI
+# ADVANCED COMMAND CONFIGURATION
 # ====================
 
 # Playlist commands
-PLAYLIST_CREATE_COMMAND: str = "crea"
+PLAYLIST_CREATE_COMMAND: str = "create"
 PLAYLIST_VIEW_COMMAND: str = "playlist"
-PLAYLIST_ADD_COMMAND: str = "aggiungi"
-PLAYLIST_REMOVE_COMMAND: str = "rimuovi"
-PLAYLIST_MOVE_COMMAND: str = "sposta"
-PLAYLIST_CLEAR_COMMAND: str = "svuota"
-PLAYLIST_LIST_COMMAND: str = "lista_playlist"
-PLAYLIST_POMPA_COMMAND: str = "pompa"
+PLAYLIST_ADD_COMMAND: str = "add"
+PLAYLIST_REMOVE_COMMAND: str = "remove"
+PLAYLIST_MOVE_COMMAND: str = "move"
+PLAYLIST_CLEAR_COMMAND: str = "clear"
+PLAYLIST_LIST_COMMAND: str = "list_playlists"
+PLAYLIST_POMPA_COMMAND: str = "pump"
 
-# Max songs per pompa batch (sliding window)
+# Max songs per pump batch (sliding window)
 MAX_POMPA_SONGS: int = 5
 
 # Admin commands
@@ -122,31 +122,31 @@ ADMIN_BLACKLIST_COMMAND: str = "blacklist"
 ADMIN_UNBLACKLIST_COMMAND: str = "unblacklist"
 ADMIN_WHITELIST_LIST_COMMAND: str = "whitelist_list"
 ADMIN_BLACKLIST_LIST_COMMAND: str = "blacklist_list"
-ADMIN_SKIP_COMMAND: str = "skippa"
+ADMIN_SKIP_COMMAND: str = "skip"
 
-ADMIN_REMOVE_QUEUE_COMMAND: str = "rimuovi_coda"
-ADMIN_QUEUE_INFO_COMMAND: str = "coda_info"
+ADMIN_REMOVE_QUEUE_COMMAND: str = "remove_queue"
+ADMIN_QUEUE_INFO_COMMAND: str = "queue_info"
 ADMIN_CLEAR_QUEUE_COMMAND: str = "clear_queue"
 
 # Analytics commands
 ANALYTICS_STATS_COMMAND: str = "stats"
-ANALYTICS_TOP_SONGS_COMMAND: str = "top_canzoni"
-ANALYTICS_TOP_USERS_COMMAND: str = "top_user"
-ANALYTICS_STORIA_COMMAND: str = "storia"
+ANALYTICS_TOP_SONGS_COMMAND: str = "top_songs"
+ANALYTICS_TOP_USERS_COMMAND: str = "top_users"
+ANALYTICS_STORIA_COMMAND: str = "history_played"
 
 # Music control commands
 MUSIC_VOLUME_COMMAND: str = "volume"
-MUSIC_PAUSE_COMMAND: str = "pausa"
-MUSIC_RESUME_COMMAND: str = "riprendi"
+MUSIC_PAUSE_COMMAND: str = "pause"
+MUSIC_RESUME_COMMAND: str = "resume"
 MUSIC_REPEAT_COMMAND: str = "repeat"
 MUSIC_REPEAT_OFF_COMMAND: str = "repeat_off"
-MUSIC_REPEAT_INFINITE_COMMAND: str = "ripeti"
-MUSIC_REPEAT_STOP_COMMAND: str = "stop_ripeti"
+MUSIC_REPEAT_INFINITE_COMMAND: str = "repeat"
+MUSIC_REPEAT_STOP_COMMAND: str = "stop_repeat"
 MUSIC_NEXT_COMMAND: str = "next"
 MUSIC_QUEUE_INFO_COMMAND: str = "queue_info"
 MUSIC_DURATION_COMMAND: str = "duration"
-MUSIC_DURATA_COMMAND: str = "durata"
-MUSIC_WHEN_COMMAND: str = "quando"
+MUSIC_DURATA_COMMAND: str = "at"
+MUSIC_WHEN_COMMAND: str = "when"
 MUSIC_RANDOM_COMMAND: str = "random"
 
 # Utility commands
@@ -155,14 +155,14 @@ UTILITY_VERSION_COMMAND: str = "version"
 UTILITY_UPTIME_COMMAND: str = "uptime"
 
 # ====================
-# CONFIGURAZIONE COOLDOWN CANZONI RANDOM
+# RANDOM SONG COOLDOWN CONFIGURATION
 # ====================
 
-# File di persistenza per il cooldown delle canzoni random
+# Persistence file for random song cooldown
 COOLDOWN_FILE: str = os.path.join("data", "random_cooldown.json")
 
-# Durata del cooldown per le canzoni random in secondi (default: 1 ora)
+# Cooldown duration for random songs in seconds (default: 1 hour)
 RANDOM_COOLDOWN_SECONDS: int = 3600
 
-# Numero massimo di tentativi per trovare una canzone non nel cooldown
+# Maximum number of attempts to find a song not in cooldown
 RANDOM_MAX_ATTEMPTS: int = 10

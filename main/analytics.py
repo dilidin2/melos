@@ -1,4 +1,4 @@
-"""Analytics - Sistema di statistica e tracking."""
+"""Analytics - Statistics and tracking system."""
 
 import json
 from pathlib import Path
@@ -7,7 +7,7 @@ from typing import Optional
 
 
 class Analytics:
-    """Gestisce le statistiche e l'analytics del bot."""
+    """Manages bot statistics and analytics."""
 
     def __init__(self, data_dir: str = "data"):
         self.data_dir = Path(data_dir)
@@ -17,7 +17,7 @@ class Analytics:
         self._load_stats()
 
     def _load_stats(self):
-        """Carica le statistiche dal disco."""
+        """Loads statistics from disk."""
         if self._stats_file.exists():
             try:
                 with open(self._stats_file, "r", encoding="utf-8") as f:
@@ -33,20 +33,20 @@ class Analytics:
             self._reset_stats()
 
     def _save_stats(self):
-        """Salva le statistiche sul disco."""
+        """Saves statistics to disk."""
         data = {
             "total_requests": self._total_requests,
             "total_plays": self._total_plays,
             "songs_by_user": self._songs_by_user,
             "songs_by_title": self._songs_by_title,
-            "play_history": self._play_history[-1000:],  # Mantieni ultimi 1000
+            "play_history": self._play_history[-1000:],  # Keep last 1000
         }
 
         with open(self._stats_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     def _reset_stats(self):
-        """Resetta le statistiche."""
+        """Resets statistics."""
         self._total_requests = 0
         self._total_plays = 0
         self._songs_by_user = {}
@@ -54,24 +54,24 @@ class Analytics:
         self._play_history = []
 
     def record_request(self, username: str, query: str):
-        """Registra una richiesta di canzone."""
+        """Records a song request."""
         self._total_requests += 1
 
-        # Aggiorna conteggio per utente
+        # Update count per user
         user_lower = username.lower()
         self._songs_by_user[user_lower] = self._songs_by_user.get(user_lower, 0) + 1
 
-        # Aggiorna conteggio per titolo
+        # Update count per title
         query_lower = query.lower()
         self._songs_by_title[query_lower] = self._songs_by_title.get(query_lower, 0) + 1
 
         self._save_stats()
 
     def record_play(self, username: str, query: str):
-        """Registra una riproduzione completata."""
+        """Records a completed playback."""
         self._total_plays += 1
 
-        # Aggiungi alla cronologia
+        # Add to history
         self._play_history.append(
             {
                 "username": username,
@@ -83,15 +83,15 @@ class Analytics:
         self._save_stats()
 
     def get_total_requests(self) -> int:
-        """Ottieni il totale delle richieste."""
+        """Gets the total number of requests."""
         return self._total_requests
 
     def get_total_plays(self) -> int:
-        """Ottieni il totale delle riproduzioni."""
+        """Gets the total number of plays."""
         return self._total_plays
 
     def get_top_songs(self, n: int = 10) -> list[dict]:
-        """Ottieni le N canzoni più richieste."""
+        """Gets the N most requested songs."""
         sorted_songs = sorted(
             self._songs_by_title.items(), key=lambda x: x[1], reverse=True
         )[:n]
@@ -99,7 +99,7 @@ class Analytics:
         return [{"title": title, "count": count} for title, count in sorted_songs]
 
     def get_top_users(self, n: int = 10) -> list[dict]:
-        """Ottieni gli N utenti con più richieste."""
+        """Gets the N users with the most requests."""
         sorted_users = sorted(
             self._songs_by_user.items(), key=lambda x: x[1], reverse=True
         )[:n]
@@ -107,7 +107,7 @@ class Analytics:
         return [{"username": user, "count": count} for user, count in sorted_users]
 
     def get_stats_today(self) -> dict:
-        """Ottieni statistiche per oggi."""
+        """Gets statistics for today."""
         today = datetime.now().date()
 
         today_plays = []
@@ -123,7 +123,7 @@ class Analytics:
         }
 
     def get_stats_week(self) -> dict:
-        """Ottieni statistiche per questa settimana."""
+        """Gets statistics for this week."""
         week_ago = datetime.now() - timedelta(days=7)
 
         week_plays = []
@@ -139,7 +139,7 @@ class Analytics:
         }
 
     def get_stats_month(self) -> dict:
-        """Ottieni statistiche per questo mese."""
+        """Gets statistics for this month."""
         month_ago = datetime.now() - timedelta(days=30)
 
         month_plays = []
@@ -155,5 +155,5 @@ class Analytics:
         }
 
     def get_play_history(self, n: int = 20) -> list[dict]:
-        """Ottiene le ultime N riproduzioni dalla cronologia."""
+        """Gets the last N plays from history."""
         return self._play_history[-n:]

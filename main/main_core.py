@@ -31,7 +31,7 @@ from loguru import logger
 
 @dataclass
 class SongRequest:
-    """Rappresenta una richiesta di canzone."""
+    """Represents a song request."""
 
     query: str
     username: str
@@ -43,7 +43,7 @@ class SongRequest:
 
 
 class RequestQueue:
-    """Gestisce la coda delle richieste."""
+    """Manages the request queue."""
 
     def __init__(self, max_size: int = 999):
         self.queue: asyncio.Queue[SongRequest] = asyncio.Queue(maxsize=max_size)
@@ -52,65 +52,65 @@ class RequestQueue:
         self._in_progress = False
 
     async def put(self, request: SongRequest) -> bool:
-        """Aggiunge una richiesta alla coda."""
+        """Adds a request to the queue."""
         try:
             await asyncio.wait_for(self.queue.put(request), timeout=5.0)
             return True
         except asyncio.TimeoutError:
-            logger.warning(f"Coda piena, richiesta rifiutata: {request.query}")
+            logger.warning(f"Queue full, request rejected: {request.query}")
             return False
 
     async def get(self) -> Optional[SongRequest]:
-        """Ritorna la prossima richiesta."""
+        """Returns the next request."""
         try:
             return await asyncio.wait_for(self.queue.get(), timeout=1.0)
         except asyncio.TimeoutError:
             return None
 
     def task_done(self):
-        """Segna una richiesta come completata."""
+        """Marks a request as completed."""
         self.queue.task_done()
 
     def qsize(self) -> int:
-        """Ritorna la dimensione della coda."""
+        """Returns the queue size."""
         return self.queue.qsize()
 
     def is_processing(self) -> bool:
-        """Ritorna True se sta processando una richiesta."""
+        """Returns True if a request is being processed."""
         return self._in_progress
 
     def get_items(self, count: int = 10) -> list[SongRequest]:
-        """Restituisce le prossime N richieste senza rimuoverle dalla coda."""
+        """Returns the next N requests without removing them from the queue."""
         return list(self.queue._queue)[:count]
 
 
 class DuplicateCache:
-    """Cache per evitare download duplicati."""
+    """Cache to avoid duplicate downloads."""
 
     def __init__(self, max_size: int = 100):
         self.cache: dict[str, tuple[str, str]] = {}
         self.max_size = max_size
 
     def add(self, query: str, file_path: str, username: str) -> None:
-        """Aggiunge una canzone alla cache."""
+        """Adds a song to the cache."""
         if len(self.cache) >= self.max_size:
             self.cache.pop(next(iter(self.cache)))
         self.cache[query.lower()] = (file_path, username)
 
     def get(self, query: str) -> Optional[tuple[str, str]]:
-        """Ritorna la canzone se già scaricata."""
+        """Returns the song if already downloaded."""
         return self.cache.get(query.lower())
 
     def remove(self, query: str) -> None:
-        """Rimuove una canzone dalla cache."""
+        """Removes a song from the cache."""
         self.cache.pop(query.lower(), None)
 
 
 class SongRequestBot:
-    """Bot principale per le richieste di canzoni."""
+    """Main bot for music requests."""
 
     def __init__(self, audio_device=None):
-        """Inizializza il bot."""
+        """Initializes the bot."""
         self.music_downloader = MusicDownloader()
         self.audio_player = AudioPlayer(device_name=audio_device)
         self.twitch_handler = TwitchHandler()
@@ -125,10 +125,10 @@ class SongRequestBot:
 
         # Repeat mode settings
         self.repeat_mode = 'off'  # 'off', 'count', 'infinite'
-        self.repeat_count = 1     # Numero di ripetizioni se repeat_mode='count'
-        self.repeat_remaining = 0 # Conteggio residuo per repeat
+        self.repeat_count = 1     # Number of repetitions if repeat_mode='count'
+        self.repeat_remaining = 0 # Remaining count for repeat
 
-        # Traccia l'ultima canzone random riprodotta per evitare ripetizioni consecutive
+        # Tracks the last random song played to avoid consecutive repetitions
         self.last_random_song: Optional[str] = None
 
         self.executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
@@ -137,7 +137,7 @@ class SongRequestBot:
         self.song_request_persistence = SongRequestPersistence()
 
     async def _handle_song_request(self, query: str, username: str, channel_id: str):
-        """Gestisce una richiesta di canzone."""
+        """Handles a music request."""
         if hasattr(self, "analytics"):
             self.analytics.record_request(username, query)
 
@@ -147,23 +147,23 @@ class SongRequestBot:
         success = await self.request_queue.put(request)
         if not success:
             await self.chat_message.send_error(
-                channel_id, username, "Coda piena, riprova più tardi."
+                channel_id, username, "Queue full, try again later."
             )
             return
 
         position = self.request_queue.qsize()
-        logger.info(f"Richiesta aggiunta alla coda: {query} da @{username}")
+        logger.info(f"Request added to queue: {query} from @{username}")
 
         await self.chat_message.send_public(
             channel_id,
-            f"✅ Aggiunta **{query}** alla coda in posizione {position}",
+            f"✅ Added **{query}** to queue at position {position}",
         )
 
         await self._persist_queue()
         self._shutdown_event.clear()
 
     async def _persist_queue(self):
-        """Converte la coda attuale in JSON e salva."""
+        """Converts the current queue to JSON and saves it."""
         items = list(self.request_queue.queue._queue)
 
         songs_data = [
@@ -180,7 +180,7 @@ class SongRequestBot:
         await self.queue_persistence.save(songs_data)
 
     async def _load_persisted_queue(self):
-        """Ripristina la coda dal file all'avvio."""
+        """Restores the queue from file on startup."""
         songs = await self.queue_persistence.load()
 
         for song_data in songs:
@@ -194,15 +194,15 @@ class SongRequestBot:
 
             try:
                 self.request_queue.queue.put_nowait(request)
-                logger.info(f"🔄 Ripristinata dalla persistenza: {request.query}")
+                logger.info(f"🔄 Restored from persistence: {request.query}")
             except asyncio.QueueFull:
-                logger.warning("Coda piena durante il ripristino")
+                logger.warning("Queue full during restore")
                 break
 
     async def _play_audio_file(
         self, channel_id: str, file_path: str, notification_text: Optional[str] = None
     ):
-        """Riproduce un file audio e invia l'eventuale notifica di riproduzione."""
+        """Plays an audio file and sends the playback notification."""
         try:
             if notification_text:
                 await self.chat_message.send_now_playing(
@@ -215,39 +215,39 @@ class SongRequestBot:
             )
             return True
         except Exception as e:
-            logger.error(f"Errore nella riproduzione di '{file_path}': {e}", exc_info=True)
+            logger.error(f"Error playing '{file_path}': {e}", exc_info=True)
             return False
 
     async def _process_request(self, request: SongRequest) -> bool:
-        """Processa una singola richiesta."""
+        """Processes a single request."""
         async with self._processing_lock:
             if self.request_queue.is_processing():
                 logger.warning(
-                    f"Già in elaborazione, richiesta ignorata: '{request.query}' da @{request.username}"
+                    f"Already processing, request ignored: '{request.query}' from @{request.username}"
                 )
                 await self.chat_message.send_error(
                     request.channel_id,
                     request.username,
-                    "C'è già una canzone in riproduzione. Riprova più tardi.",
+                    "A song is already playing. Try again later.",
                 )
                 return False
 
             self.request_queue._in_progress = True
-            logger.info(f"Processando: '{request.query}' da @{request.username}")
+            logger.info(f"Processing: '{request.query}' from @{request.username}")
 
         try:
             cached = self.duplicate_cache.get(request.query)
             if cached:
                 file_path, _ = cached
-                # FIX: verifica che il file in cache esista ancora su disco
+                # FIX: verify that the cached file still exists on disk
                 if not os.path.exists(file_path):
                     logger.warning(
-                        f"File in cache non trovato su disco, ri-scarico: '{request.query}'"
+                        f"Cached file not found on disk, re-downloading: '{request.query}'"
                     )
                     self.duplicate_cache.remove(request.query)
                     file_path = None
                 else:
-                    logger.info(f"Canzone già scaricata, uso cache: '{request.query}'")
+                    logger.info(f"Song already downloaded, using cache: '{request.query}'")
             else:
                 file_path = None
 
@@ -259,26 +259,26 @@ class SongRequestBot:
 
                     if not file_path:
                         logger.warning(
-                            f"Download fallito (nessun file) per '{request.query}' da @{request.username}"
+                            f"Download failed (no file) for '{request.query}' from @{request.username}"
                         )
                         await self.chat_message.send_error(
                             request.channel_id,
                             request.username,
-                            "Impossibile scaricare la canzone. Riprova più tardi.",
+                            "Unable to download the song. Try again later.",
                         )
                         return False
 
-                    # Usa il nome del file su disco come chiave cache (non la query
-                    # dell'utente), così query diverse per la stessa canzone
-                    # trovano il file in cache al secondo tentativo.
+                    # Use the disk filename as cache key (not the user's query),
+                    # so different queries for the same song find the cached file
+                    # on the second attempt.
                     cache_key = os.path.splitext(os.path.basename(file_path))[0]
                     self.duplicate_cache.add(cache_key, file_path, request.username)
-                    # Aggiungi anche la query originale per hit immediato
+                    # Also add the original query for immediate hit
                     self.duplicate_cache.add(request.query, file_path, request.username)
 
                 except _SongTooLongError as e:
                     logger.warning(
-                        f"Canzone troppo lunga per '{request.query}' da @{request.username}: {e}"
+                        f"Song too long for '{request.query}' from @{request.username}: {e}"
                     )
                     await self.chat_message.send_error(
                         request.channel_id,
@@ -288,7 +288,7 @@ class SongRequestBot:
                     return False
                 except _CategoryError as e:
                     logger.warning(
-                        f"Categoria non consentita per '{request.query}' da @{request.username}: {e}"
+                        f"Category not allowed for '{request.query}' from @{request.username}: {e}"
                     )
                     await self.chat_message.send_error(
                         request.channel_id,
@@ -298,7 +298,7 @@ class SongRequestBot:
                     return False
                 except _NoValidCandidateError as e:
                     logger.warning(
-                        f"Nessun candidato valido per '{request.query}' da @{request.username}: {e}"
+                        f"No valid candidate for '{request.query}' from @{request.username}: {e}"
                     )
                     await self.chat_message.send_error(
                         request.channel_id,
@@ -308,14 +308,14 @@ class SongRequestBot:
                     return False
                 except Exception as e:
                     logger.error(
-                        f"Eccezione nel download di '{request.query}' da @{request.username}: "
+                        f"Exception downloading '{request.query}' from @{request.username}: "
                         f"{type(e).__name__}: {e}",
                         exc_info=True,
                     )
                     await self.chat_message.send_error(
                         request.channel_id,
                         request.username,
-                        "Errore durante il download. Riprova più tardi.",
+                        "Error during download. Try again later.",
                     )
                     return False
 
@@ -324,11 +324,10 @@ class SongRequestBot:
                 request.resolved_title = song_info.get("title")
                 request.resolved_duration = song_info.get("duration")
 
-            # FIX BUG: dopo il download, ottieni il titolo corretto dal nome del
-            # file su disco. Il download() prova fino a 10 candidati YouTube e
-            # se il primo è geo-blocked prende il secondo, quindi il titolo
-            # originale della ricerca potrebbe non corrispondere alla canzone
-            # effettivamente riprodotta.
+            # FIX BUG: after download, get the correct title from the disk
+            # filename. download() tries up to 10 YouTube candidates and if the
+            # first is geo-blocked it picks the second, so the original search
+            # title might not match the song actually played.
             if file_path and os.path.exists(file_path):
                 actual_title = os.path.splitext(os.path.basename(file_path))[0]
                 request.resolved_title = actual_title
@@ -338,18 +337,18 @@ class SongRequestBot:
                 request.channel_id, file_path, notification
             )
 
-            # FIX: notifica l'utente anche in caso di errore di riproduzione.
-            # Prima mancava questo ramo: se _play_audio_file restituiva False,
-            # il bot non mandava nessun messaggio in chat.
+            # FIX: notify the user even in case of playback error.
+            # Before, this branch was missing: if _play_audio_file returned False,
+            # the bot would not send any message to chat.
             if not success:
                 logger.error(
-                    f"Riproduzione fallita per '{request.query}' da @{request.username} "
+                    f"Playback failed for '{request.query}' from @{request.username} "
                     f"(file: '{file_path}')"
                 )
                 await self.chat_message.send_error(
                     request.channel_id,
                     request.username,
-                    "Errore durante la riproduzione. Riprova più tardi.",
+                    "Error during playback. Try again later.",
                 )
 
             if success and hasattr(self, "analytics"):
@@ -361,7 +360,7 @@ class SongRequestBot:
             self.request_queue._in_progress = False
 
     async def _queue_processor(self):
-        """Processa continuamente la coda delle richieste."""
+        """Continuously processes the request queue."""
         while not self._shutdown_event.is_set() or self.request_queue.qsize() > 0:
             if self._shutdown_event.is_set():
                 while self.request_queue.qsize() > 0:
@@ -369,7 +368,7 @@ class SongRequestBot:
                         req = await self.request_queue.get()
                         if req:
                             self.request_queue.task_done()
-                            logger.info(f"Coda svuotata: {req.query}")
+                            logger.info(f"Queue drained: {req.query}")
                     except Exception:
                         break
                 break
@@ -377,16 +376,16 @@ class SongRequestBot:
             request = await self.request_queue.get()
 
             if request:
-                # Salva quale canzone è "quella da ripetere" al momento del get
+                # Save which song is "the one to repeat" at the time of get
                 repeat_target = request
 
-                while True:  # ← loop interno per il repeat
+                while True:  # ← inner loop for repeat
                     success = await self._process_request(repeat_target)
                     # task_done() chiamato una sola volta per la richiesta originale
 
                     if not success:
                         if self.repeat_mode != 'off':
-                            logger.warning(f"Riproduzione fallita, disattivo repeat")
+                            logger.warning(f"Playback failed, disabling repeat")
                             self.repeat_mode = 'off'
                             self.repeat_remaining = 0
                         await self._persist_queue()
@@ -394,8 +393,8 @@ class SongRequestBot:
 
                     # Gestione repeat
                     if self.repeat_mode == 'infinite':
-                        logger.info(f"🔁 Repeat INFINITO: ripeto '{repeat_target.query}'")
-                        # NON rimette in coda, ricomincia il while interno
+                        logger.info(f"🔁 INFINITE repeat: repeating '{repeat_target.query}'")
+                        # Does NOT re-queue, restarts the inner while
                         continue
 
                     elif self.repeat_mode == 'count':
@@ -403,12 +402,12 @@ class SongRequestBot:
                         if self.repeat_remaining > 0:
                             logger.info(
                                 f"🔁 Repeat ({self.repeat_remaining}/{self.repeat_count}): "
-                                f"ripeto '{repeat_target.query}'"
+                                f"repeating '{repeat_target.query}'"
                             )
                             continue  # replay immediato, nessun'altra canzone si intromette
                         else:
                             self.repeat_mode = 'off'
-                            logger.info(f"🔁 Repeat terminato dopo {self.repeat_count} volte")
+                            logger.info(f"🔁 Repeat ended after {self.repeat_count} times")
                             await self._persist_queue()
                             break
                     else:
@@ -416,13 +415,13 @@ class SongRequestBot:
                         await self._persist_queue()
                         break
 
-                # Alla fine del loop interno (repeat terminato o fallito),
-                # segnala il completamento della richiesta originale
+                # At the end of the inner loop (repeat ended or failed),
+                # signal completion of the original request
                 self.request_queue.task_done()
 
             else:
                 if not self._shutdown_event.is_set():
-                    # Estrae una canzone random da downloads/ evitando la stessa 2 volte di fila
+                    # Picks a random song from downloads/ avoiding the same one twice in a row
                     try:
                         import random as random_module
                         files = os.listdir(DOWNLOAD_DIR)
@@ -431,11 +430,11 @@ class SongRequestBot:
                         ]
 
                         if audio_files:
-                            # Se c'è un'ultima canzone riprodotta, filtra per evitare ripetizioni consecutive
+                            # If there's a last song played, filter to avoid consecutive repetitions
                             if self.last_random_song:
                                 available = [f for f in audio_files if f != self.last_random_song]
                                 if not available:
-                                    # Tutti i file sono l'ultima canzone (solo un file presente), usa quello
+                                    # All files are the last song (only one file present), use that one
                                     available = audio_files
                             else:
                                 available = audio_files
@@ -446,20 +445,20 @@ class SongRequestBot:
                             self.last_random_song = selected
 
                             song_name = os.path.splitext(selected)[0]
-                            notification = f"Riproduzione casuale di {song_name}"
+                            notification = f"Playing random: {song_name}"
                             await self._play_audio_file(
                                 TARGET_CHANNEL, random_file, notification
                             )
                         else:
                             await asyncio.sleep(1)
                     except Exception as e:
-                        logger.error(f"Errore selezione canzone random: {e}")
+                        logger.error(f"Error selecting random song: {e}")
                         await asyncio.sleep(1)
 
             await asyncio.sleep(0.1)
 
     def skip_current_song(self) -> bool:
-        """Ferma la riproduzione corrente per saltare alla successiva."""
+        """Stops current playback to move to the next."""
         if not self.audio_player.is_playing():
             return False
 
@@ -467,13 +466,13 @@ class SongRequestBot:
         return True
 
     def _signal_handler(self):
-        """Handler per SIGINT/SIGTERM."""
+        """Handler for SIGINT/SIGTERM."""
         if not self._shutdown_initiated:
-            logger.info("Segnale di arresto ricevuto (Ctrl+C)")
+            logger.info("Shutdown signal received (Ctrl+C)")
             asyncio.create_task(self.shutdown())
 
     async def run(self):
-        """Avvia il bot."""
+        """Starts the bot."""
         self._running = True
 
         loop = asyncio.get_running_loop()
@@ -484,16 +483,16 @@ class SongRequestBot:
         await self._load_persisted_queue()
 
         if not await self.twitch_handler.connect():
-            logger.error("Impossibile connettersi a Twitch")
+            logger.error("Unable to connect to Twitch")
             return
 
-        logger.info(f"Bot attivo sul canale @{TARGET_CHANNEL}")
-        logger.info("Ascolto comandi !sr... (Ctrl+C per uscire)")
+        logger.info(f"Bot active on channel @{TARGET_CHANNEL}")
+        logger.info("Listening for !sr commands... (Ctrl+C to exit)")
 
         self._queue_task = asyncio.create_task(self._queue_processor())
         self._queue_task.add_done_callback(
             lambda t: (
-                logger.error(f"Queue processor morto: {t.exception()}")
+                logger.error(f"Queue processor died: {t.exception()}")
                 if not t.cancelled() and t.exception()
                 else None
             )
@@ -502,21 +501,21 @@ class SongRequestBot:
         try:
             await self._shutdown_event.wait()
         except asyncio.CancelledError:
-            logger.info("Shutdown in corso...")
+            logger.info("Shutdown in progress...")
         except KeyboardInterrupt:
             await self.shutdown()
 
     async def shutdown(self):
-        """Arresta il bot in modo pulito."""
+        """Stops the bot cleanly."""
         if self._shutdown_initiated:
-            logger.warning("Shutdown già in corso, ignoro richiesta duplicata")
+            logger.warning("Shutdown already in progress, ignoring duplicate request")
             return
 
         self._shutdown_initiated = True
         self._running = False
         self._shutdown_event.set()
 
-        logger.info("Arresto bot...")
+        logger.info("Stopping bot...")
 
         self.audio_player.stop()
 
@@ -532,7 +531,7 @@ class SongRequestBot:
         try:
             await asyncio.wait_for(self.twitch_handler.disconnect(), timeout=3.0)
         except asyncio.TimeoutError:
-            logger.warning("Timeout disconnessione Twitch, forzato")
+            logger.warning("Twitch disconnect timeout, forced")
 
         self.executor.shutdown(wait=False, cancel_futures=True)
 
@@ -543,4 +542,4 @@ class SongRequestBot:
         except Exception:
             pass
 
-        logger.info("Bot arrestato correttamente")
+        logger.info("Bot stopped successfully")

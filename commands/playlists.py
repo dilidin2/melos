@@ -1,4 +1,4 @@
-"""Playlist Commands - Comandi per la gestione delle playlist."""
+"""Playlist Commands - Commands for playlist management."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class PlaylistCommands:
-    """Gestisce tutti i comandi relativi alle playlist."""
+    """Handles all playlist-related commands."""
 
     def __init__(self, playlist_manager: PlaylistManager, request_queue: RequestQueue, bot: SongRequestBot):
         self.playlist_manager = playlist_manager
@@ -19,34 +19,34 @@ class PlaylistCommands:
         self.bot = bot
 
     async def cmd_crea(self, username: str, nome_playlist: str) -> str:
-        """!crea <nome_playlist> - Crea una nuova playlist."""
+        """!crea <playlist_name> - Creates a new playlist."""
         playlist = self.playlist_manager.create_playlist(username, nome_playlist)
 
         if playlist is None:
-            return f"❌ Esisti già una playlist con questo nome '{nome_playlist}'"
+            return f"❌ A playlist with the name '{nome_playlist}' already exists"
 
-        return f"✅ Playlist '{nome_playlist}' creata!"
+        return f"✅ Playlist '{nome_playlist}' created!"
 
     async def cmd_playlist(
         self, username: str, nome_playlist: Optional[str] = None, page: int = 1
     ) -> str:
-        """!playlist [nome] [pagina] - Mostra playlist o canzoni."""
+        """!playlist [name] [page] - Shows playlists or songs."""
         if nome_playlist is None:
             playlists = self.playlist_manager.get_user_playlists(username)
 
             if not playlists:
-                return "📭 Non hai playlist create."
+                return "📭 You don't have any playlists."
 
-            lines = [f"📋 Le tue playlist ({len(playlists)}):"]
+            lines = [f"📋 Your playlists ({len(playlists)}):"]
             for p in playlists:
-                lines.append(f"  • {p.nome} ({len(p.canzoni)} canzoni)")
+                lines.append(f"  • {p.nome} ({len(p.canzoni)} songs)")
 
             return "\n".join(lines)
         else:
             songs = self.playlist_manager.get_playlist_songs(username, nome_playlist)
 
             if not songs:
-                return f"❌ Playlist '{nome_playlist}' non trovata o vuota."
+                return f"❌ Playlist '{nome_playlist}' not found or empty."
 
             songs_per_page = 8
             total_pages = (len(songs) + songs_per_page - 1) // songs_per_page
@@ -74,76 +74,76 @@ class PlaylistCommands:
         file_path: str,
         original_user: str,
     ) -> str:
-        """!aggiungi <nome_playlist> - Aggiunge la canzone corrente alla playlist."""
+        """!aggiungi <playlist_name> - Adds the current song to the playlist."""
         success = self.playlist_manager.add_song_to_playlist(
             username, nome_playlist, query, file_path, original_user
         )
 
         if not success:
-            return f"❌ Playlist '{nome_playlist}' non trovata."
+            return f"❌ Playlist '{nome_playlist}' not found."
 
-        return f"✅ Canzone aggiunta a '{nome_playlist}'"
+        return f"✅ Song added to '{nome_playlist}'"
 
     async def cmd_rimuovi(
         self, username: str, nome_playlist: str, index_or_name: str
     ) -> str:
-        """!rimuovi <nome_playlist> <numero_o_nome> - Rimuove una canzone."""
+        """!rimuovi <playlist_name> <number_or_name> - Removes a song."""
         success = self.playlist_manager.remove_song_from_playlist(
             username, nome_playlist, index_or_name
         )
 
         if not success:
-            return f"❌ Impossibile rimuovere la canzone da '{nome_playlist}'."
+            return f"❌ Unable to remove the song from '{nome_playlist}'."
 
-        return "✅ Canzone rimossa dalla playlist."
+        return "✅ Song removed from playlist."
 
     async def cmd_sposta(
         self, username: str, nome_playlist: str, num1: str, num2: str
     ) -> str:
-        """!sposta <nome_playlist> <numero1> <numero2> - Sposta una canzone."""
+        """!sposta <playlist_name> <number1> <number2> - Moves/swaps a song."""
         success = self.playlist_manager.swap_songs_in_playlist(
             username, nome_playlist, num1, num2
         )
 
         if not success:
-            return f"❌ Impossibile spostare le canzoni in '{nome_playlist}'."
+            return f"❌ Unable to swap songs in '{nome_playlist}'."
 
-        return "✅ Canzoni spostate con successo."
+        return "✅ Songs swapped successfully."
 
     async def cmd_svuota(self, username: str, nome_playlist: str) -> str:
-        """!svuota <nome_playlist> - Rimuove tutte le canzoni dalla playlist."""
+        """!svuota <playlist_name> - Removes all songs from the playlist."""
         success = self.playlist_manager.clear_playlist(username, nome_playlist)
 
         if not success:
-            return f"❌ Playlist '{nome_playlist}' non trovata."
+            return f"❌ Playlist '{nome_playlist}' not found."
 
-        return "✅ Playlist svuotata."
+        return "✅ Playlist cleared."
 
     async def cmd_lista_playlist(self, username: str) -> str:
-        """!lista_playlist - Mostra tutte le playlist disponibili."""
+        """!lista_playlist - Shows all available playlists."""
         playlists = self.playlist_manager.get_user_playlists(username)
 
         if not playlists:
-            return "📭 Nessuna playlist trovata."
+            return "📭 No playlists found."
 
-        lines = [f"📚 Le tue playlist ({len(playlists)}):"]
+        lines = [f"📚 Your playlists ({len(playlists)}):"]
         for p in playlists:
-            lines.append(f"  • {p.nome} ({len(p.canzoni)} canzoni)")
+            lines.append(f"  • {p.nome} ({len(p.canzoni)} songs)")
 
         return "\n".join(lines)
 
     async def cmd_pompa(self, username: str, playlist_name: Optional[str], n: int, channel_id: str) -> str:
-        """!pompa [playlist] [n] - Pompa N canzoni random da una playlist."""
+        """!pompa [playlist] [n] - Pumps N random songs from a playlist."""
         if playlist_name is None:
             playlists = self.playlist_manager.get_user_playlists(username)
 
             if not playlists:
-                return "📭 Non hai playlist. Usa !pompa <nome_playlist> [n]."
+                return "📭 You don't have playlists. Use !pompa <playlist_name> [n]."
 
             if len(playlists) == 1:
                 playlist_name = playlists[0].nome
             else:
-                lines = ["🎯 Hai multiple playlist. Specifica un nome:"]
+                lines = ["🎯 You have multiple playlists. Specify a name:"]
                 for p in playlists:
                     lines.append(f"  • {p.nome}")
                 return "\n".join(lines)
@@ -151,7 +151,7 @@ class PlaylistCommands:
         songs = self.playlist_manager.pompa_songs(username, playlist_name, n)
 
         if not songs:
-            return f"❌ Playlist '{playlist_name}' non trovata o vuota."
+            return f"❌ Playlist '{playlist_name}' not found or empty."
 
         for song in songs:
             request_id = self.request_queue._request_counter
@@ -165,7 +165,7 @@ class PlaylistCommands:
             )
             await self.request_queue.put(request)
 
-        lines = [f"🚰 Pompate {len(songs)} canzoni da '{playlist_name}':"]
+        lines = [f"🚰 Pumped {len(songs)} songs from '{playlist_name}':"]
         for i, song in enumerate(songs, 1):
             lines.append(f"  {i}. {song.query} (@{song.username_original})")
 

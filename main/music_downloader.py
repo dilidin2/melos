@@ -2,8 +2,8 @@
 """
 Music Downloader Module
 
-Gestisce il download di audio da YouTube usando yt-dlp.
-Filtra per categoria "Music" e durata massima.
+Handles audio downloading from YouTube using yt-dlp.
+Filters by "Music" category and maximum duration.
 """
 
 import copy
@@ -28,30 +28,30 @@ from main.config import (
 
 
 class _SongTooLongError(Exception):
-    """Tutti i candidati trovati superano la durata massima."""
+    """All found candidates exceed the maximum duration."""
     pass
 
 
 class _CategoryError(Exception):
-    """Il video non appartiene alla categoria Music."""
+    """The video does not belong to the Music category."""
     pass
 
 
 class _NoValidCandidateError(Exception):
-    """Nessun candidato valido trovato tra i risultati della ricerca."""
+    """No valid candidate found among search results."""
     pass
 
 
 class MusicDownloader:
-    """Classe per gestire il download di musica da YouTube."""
+    """Class to handle music downloading from YouTube."""
 
     def __init__(self):
-        """Inizializza il MusicDownloader."""
+        """Initializes the MusicDownloader."""
         os.makedirs(DOWNLOAD_DIR, exist_ok=True)
         self._ydl_opts = self._get_ydl_options()
 
     def _get_ydl_options(self) -> Dict[str, Any]:
-        """Configura le opzioni di yt-dlp."""
+        """Configures yt-dlp options."""
         return {
             "format": "bestaudio/best/b",
             "postprocessors": [
@@ -70,7 +70,7 @@ class MusicDownloader:
         }
 
     def _get_info_opts(self) -> Dict[str, Any]:
-        """Opzioni leggere per estrarre solo metadati, senza vincoli di formato."""
+        """Lightweight options to extract only metadata, without format constraints."""
         return {
             # FIX: rimosso "format" e "format_sort" per non bloccare video con
             # formati non standard durante la sola estrazione dei metadati.
@@ -83,7 +83,7 @@ class MusicDownloader:
         }
 
     def _extract_info(self, url: str) -> Optional[Dict[str, Any]]:
-        """Estrae le informazioni di un video senza scaricarlo."""
+        """Extracts video information without downloading it."""
         try:
             # FIX: usa _get_info_opts() invece di _ydl_opts per l'estrazione
             # dei metadati. _ydl_opts ha vincoli di formato (format_sort, codec)
@@ -92,61 +92,61 @@ class MusicDownloader:
                 info = ydl.extract_info(url, download=False)
                 return info
         except yt_dlp.utils.DownloadError as e:
-            logger.error(f"Errore yt-dlp nell'estrazione info per '{url}': {e}")
+            logger.error(f"yt-dlp error extracting info for '{url}': {e}")
             return None
         except Exception as e:
-            logger.error(f"Errore imprevisto nell'estrazione info per '{url}': {e}", exc_info=True)
+            logger.error(f"Unexpected error extracting info for '{url}': {e}", exc_info=True)
             return None
 
     def _validate_song(self, info: Dict[str, Any]) -> tuple[bool, str]:
-        """Valida se la canzone rispetta i criteri."""
-        # Verifica durata
+        """Validates if the song meets the criteria."""
+        # Check duration
         duration = info.get("duration", 0)
         if not duration:
-            return False, "Durata non disponibile"
+            return False, "Duration not available"
         if duration > MAX_DURATION_SECONDS:
             return (
                 False,
-                f"Canzone troppo lunga ({duration}s > {MAX_DURATION_SECONDS}s)",
+                f"Song too long ({duration}s > {MAX_DURATION_SECONDS}s)",
             )
 
-        # Verifica categoria (Music) - le categorie sono una lista
+        # Check category (Music) - categories are a list
         categories = info.get("categories", [])
         if not any("music" in c.lower() for c in categories):
-            cat_str = ", ".join(categories) if categories else "nessuna categoria"
+            cat_str = ", ".join(categories) if categories else "no category"
             return False, (
-                f"Il video è nella categoria '{cat_str}', non 'Music'. "
-                f"Sono accettate solo canzoni."
+                f"The video is in the '{cat_str}' category, not 'Music'. "
+                f"Only songs are accepted."
             )
 
         return True, ""
 
     def _is_url(self, text: str) -> bool:
-        """Verifica se il testo è un URL YouTube."""
+        """Checks if the text is a YouTube URL."""
         url_pattern = r"https?://(www\.)?youtube\.com/|https?://youtu\.be/"
         return bool(re.search(url_pattern, text, re.IGNORECASE))
 
     def _search_youtube(self, query: str) -> Optional[str]:
-        """Cerca una canzone su YouTube e ritorna l'URL del primo risultato."""
+        """Searches for a song on YouTube and returns the first result URL."""
         candidates = self._search_youtube_candidates(query, max_results=1)
         return candidates[0] if candidates else None
 
     def _search_youtube_candidates(self, query: str, max_results: int = 5) -> list[str]:
-        """Cerca su YouTube e ritorna fino a max_results URL candidati.
+        """Searches YouTube and returns up to max_results candidate URLs.
 
-        Restituisce più risultati invece di uno solo, così download() può
-        provare il successivo se un video non è disponibile (geo-block, ecc.).
+        Returns multiple results instead of just one, so download() can
+        try the next one if a video is not available (geo-block, etc.).
         """
         return [url for url, _ in self._search_youtube_candidates_with_info(query, max_results)]
 
     def _search_youtube_candidates_with_info(
         self, query: str, max_results: int = 5
     ) -> list[tuple[str, Dict[str, Any]]]:
-        """Cerca su YouTube e ritorna fino a max_results coppie (url, info).
+        """Searches YouTube and returns up to max_results (url, info) pairs.
 
-        Restituisce le info già fetchate dalla ricerca così download() può
-        validare i candidati senza un secondo round-trip per ogni video.
-        La durata è quasi sempre presente nei risultati di ytsearch.
+        Returns info already fetched from search so download() can
+        validate candidates without a second round-trip for each video.
+        Duration is almost always present in ytsearch results.
         """
         search_query = f"ytsearch{max_results}:{query}"
         results: list[tuple[str, Dict[str, Any]]] = []
@@ -164,17 +164,17 @@ class MusicDownloader:
                         if url:
                             results.append((url, entry))
         except Exception as e:
-            logger.warning(f"Errore nella ricerca YouTube per '{query}': {e}")
+            logger.warning(f"Error in YouTube search for '{query}': {e}")
         return results
 
     def get_video_info(self, query_or_url: str) -> Optional[Dict[str, Any]]:
-        """Ottiene informazioni su un video senza scaricarlo."""
+        """Gets information about a video without downloading it."""
         url = query_or_url
 
         if not self._is_url(query_or_url):
             url = self._search_youtube(query_or_url)
             if not url:
-                logger.error(f"Nessun risultato trovato per: '{query_or_url}'")
+                logger.error(f"No results found for: '{query_or_url}'")
                 return None
 
         info = self._extract_info(url)
@@ -183,32 +183,32 @@ class MusicDownloader:
 
         is_valid, error_msg = self._validate_song(info)
         if not is_valid:
-            logger.warning(f"Canzone non valida per '{query_or_url}': {error_msg}")
+            logger.warning(f"Invalid song for '{query_or_url}': {error_msg}")
             return None
 
         return info
 
     def download(self, query_or_url: str) -> Optional[str]:
         """
-        Scarica una canzone da YouTube.
+        Downloads a song from YouTube.
 
         Args:
-            query_or_url: Titolo della canzone, URL YouTube o path file locale
+            query_or_url: Song title, YouTube URL or local file path
 
         Returns:
-            Percorso del file scaricato o None in caso di errore
+            Path of the downloaded file or None in case of error
         """
-        # Se il query è già un path di file esistente, lo restituisce direttamente
-        # (evita ricerche YouTube inutili per !random e riproduzione casuale).
+        # If the query is already an existing file path, return it directly
+        # (avoids unnecessary YouTube searches for !random and random playback).
         if os.path.isfile(query_or_url):
-            logger.info(f"File locale trovato, uso diretto: {query_or_url}")
+            logger.info(f"Local file found, using directly: {query_or_url}")
             return query_or_url
 
-        # Se è un URL diretto usa solo quello; se è una query testo
-        # recupera più candidati e prova in ordine finché uno è disponibile.
-        # FIX: usiamo _search_youtube_candidates_with_info per ottenere le info
-        # già fetchate dalla ricerca (inclusa la duration), evitando un secondo
-        # round-trip per ogni video che causava "Durata non disponibile" su tutti.
+        # If it's a direct URL, use only that; if it's a text query
+        # retrieve multiple candidates and try in order until one is available.
+        # FIX: we use _search_youtube_candidates_with_info to get the info
+        # already fetched from the search (including duration), avoiding a second
+        # round-trip for each video that caused "Duration not available" for all.
         if self._is_url(query_or_url):
             candidates_with_info: list[tuple[str, Optional[Dict[str, Any]]]] = [
                 (query_or_url, None)
@@ -216,7 +216,7 @@ class MusicDownloader:
         else:
             raw = self._search_youtube_candidates_with_info(query_or_url, max_results=10)
             if not raw:
-                logger.error(f"Nessun risultato trovato per: '{query_or_url}'")
+                logger.error(f"No results found for: '{query_or_url}'")
                 return None
             candidates_with_info = raw  # type: ignore[assignment]
 
@@ -225,22 +225,22 @@ class MusicDownloader:
         rejection_reasons: list[str] = []
 
         for candidate, prefetched_info in candidates_with_info:
-            # Usa le info già fetchate dalla ricerca se disponibili;
-            # fa un fetch separato solo per URL diretti o se mancano.
+            # Use the info already fetched from the search if available;
+            # do a separate fetch only for direct URLs or if missing.
             candidate_info = prefetched_info
             if not candidate_info or not candidate_info.get("duration"):
                 candidate_info = self._extract_info(candidate)
             if not candidate_info:
-                rejection_reasons.append("non disponibile")
+                rejection_reasons.append("not available")
                 logger.warning(
-                    f"Info non disponibili per '{candidate}', provo il prossimo"
+                    f"Info not available for '{candidate}', trying next"
                 )
                 continue
             is_valid, error_msg = self._validate_song(candidate_info)
             if not is_valid:
                 rejection_reasons.append(error_msg)
                 logger.warning(
-                    f"Candidato scartato '{candidate}': {error_msg}, provo il prossimo"
+                    f"Candidate rejected '{candidate}': {error_msg}, trying next"
                 )
                 continue
             info = candidate_info
@@ -251,57 +251,57 @@ class MusicDownloader:
             num_tried = len(candidates_with_info)
 
             # Se tutti i candidati sono stati rifiutati, solleva un'eccezione
-            # con il primo motivo significativo trovato.
+            # with the first significant reason found.
             if rejection_reasons:
-                all_too_long = all("troppo lunga" in r for r in rejection_reasons)
-                all_wrong_category = all("categoria" in r for r in rejection_reasons)
+                all_too_long = all("too long" in r for r in rejection_reasons)
+                all_wrong_category = all("category" in r for r in rejection_reasons)
 
                 if all_too_long:
                     logger.error(
-                        f"Tutti i {num_tried} risultati per '{query_or_url}' "
-                        f"superano la durata massima ({MAX_DURATION_SECONDS}s)."
+                        f"All {num_tried} results for '{query_or_url}' "
+                        f"exceed the maximum duration ({MAX_DURATION_SECONDS}s)."
                     )
                     raise _SongTooLongError(
-                        f"Tutti i risultati trovati sono troppo lunghi "
+                        f"All found results are too long "
                         f"(max {MAX_DURATION_SECONDS // 60} min). "
-                        f"Cerca una traccia specifica, non l'intera soundtrack."
+                        f"Search for a specific track, not the entire soundtrack."
                     )
 
                 if all_wrong_category:
                     first_reason = next(
-                        (r for r in rejection_reasons if "categoria" in r), ""
+                        (r for r in rejection_reasons if "category" in r), ""
                     )
                     logger.error(
-                        f"Tutti i {num_tried} risultati per '{query_or_url}' "
-                        f"non sono nella categoria {YOUTUBE_CATEGORY}."
+                        f"All {num_tried} results for '{query_or_url}' "
+                        f"are not in the {YOUTUBE_CATEGORY} category."
                     )
                     raise _CategoryError(
                         first_reason
-                        or f"Il video non è nella categoria {YOUTUBE_CATEGORY}. "
-                           f"Sono accettate solo canzoni."
+                        or f"The video is not in the {YOUTUBE_CATEGORY} category. "
+                           f"Only songs are accepted."
                     )
 
-                # Fallback su motivi misti: prendi il primo motivo significativo
+                # Fallback for mixed reasons: take the first significant reason
                 meaningful = next(
-                    (r for r in rejection_reasons if r != "non disponibile"),
+                    (r for r in rejection_reasons if r != "not available"),
                     rejection_reasons[0],
                 )
                 logger.error(
-                    f"Nessun candidato valido per '{query_or_url}' "
-                    f"({num_tried} provati, motivi: {rejection_reasons})"
+                    f"No valid candidate for '{query_or_url}' "
+                    f"({num_tried} tried, reasons: {rejection_reasons})"
                 )
                 raise _NoValidCandidateError(meaningful)
 
             logger.error(
-                f"Nessun candidato valido trovato per '{query_or_url}' "
-                f"({num_tried} provati, nessun motivo di rifiuto registrato)"
+                f"No valid candidate found for '{query_or_url}' "
+                f"({num_tried} tried, no rejection reason recorded)"
             )
             return None
 
-        # Controlla se il file esiste già su disco confrontando il titolo esatto
-        # del video YouTube con i file presenti. Non usiamo _find_matching_file
-        # (fuzzy) perché produce falsi positivi: token corti come "-" o "ft"
-        # matchano per substring qualsiasi file nella cartella.
+        # Check if the file already exists on disk by comparing the exact title
+        # of the YouTube video with existing files. We don't use _find_matching_file
+        # (fuzzy) because it produces false positives: short tokens like "-" or "ft"
+        # match any file in the folder by substring.
         video_title = info.get("title", "").strip()
         if video_title:
             title_safe = re.sub(r'[<>:"/\\|?*]', "_", video_title)[:100]
@@ -309,20 +309,20 @@ class MusicDownloader:
                 expected = os.path.join(DOWNLOAD_DIR, f"{title_safe}{ext}")
                 if os.path.exists(expected):
                     logger.info(
-                        f"File già presente su disco per '{query_or_url}' → '{expected}'"
+                        f"File already present on disk for '{query_or_url}' → '{expected}'"
                     )
                     return expected
 
-        # Scarica il file
+        # Download the file
         try:
-            # FIX: usa deepcopy per evitare che chiamate concorrenti condividano
-            # la stessa lista di postprocessors (shallow copy non è sufficiente).
+            # FIX: use deepcopy to prevent concurrent calls from sharing
+            # the same postprocessors list (shallow copy is not sufficient).
             opts = copy.deepcopy(self._ydl_opts)
 
-            # FIX: usa il postprocessor_hook invece del progress_hook per
-            # catturare il percorso DOPO che FFmpeg ha completato la conversione.
-            # Il progress_hook con status="finished" scatta quando il download
-            # grezzo finisce, ma PRIMA che FFmpeg scriva il file .mp3.
+            # FIX: use postprocessor_hook instead of progress_hook to
+            # capture the path AFTER FFmpeg has completed the conversion.
+            # The progress_hook with status="finished" fires when the raw download
+            # finishes, but BEFORE FFmpeg writes the .mp3 file.
             final_path: list[str] = []
             download_exception: list[Exception] = []
 
@@ -331,7 +331,7 @@ class MusicDownloader:
                     filepath = d.get("info_dict", {}).get("filepath") or d.get("filepath")
                     if filepath and os.path.exists(filepath):
                         final_path.append(filepath)
-                        logger.debug(f"Postprocessor completato: {filepath}")
+                        logger.debug(f"Postprocessor completed: {filepath}")
 
             opts["postprocessor_hooks"] = [postprocessor_hook]
 
@@ -347,7 +347,7 @@ class MusicDownloader:
             download_thread.join(timeout=600)  # 10 minuti
 
             if download_thread.is_alive():
-                logger.error(f"Timeout download (10 min) per: '{query_or_url}'")
+                logger.error(f"Download timeout (10 min) for: '{query_or_url}'")
                 return None
 
             if download_exception:
@@ -360,44 +360,44 @@ class MusicDownloader:
                     logger.info(f"Download completato: {path}")
                     return path
                 logger.warning(
-                    f"Postprocessor ha restituito un percorso inesistente: {path}"
+                    f"Postprocessor returned a non-existent path: {path}"
                 )
 
-            # Fallback 1: attendi brevemente e cerca per titolo
+            # Fallback 1: wait briefly and search by title
             title = info.get("title", "unknown").strip()
             title_safe = re.sub(r'[<>:"/\\|?*]', "_", title)[:100]
             for ext in [f".{AUDIO_FORMAT}", ".mp3", ".m4a", ".webm"]:
                 file_path = os.path.join(DOWNLOAD_DIR, f"{title_safe}{ext}")
                 if os.path.exists(file_path):
-                    logger.info(f"File trovato via fallback titolo: {file_path}")
+                    logger.info(f"File found via title fallback: {file_path}")
                     return file_path
 
-            # Fallback 2: attendi che FFmpeg finisca di scrivere (max 5s)
+            # Fallback 2: wait for FFmpeg to finish writing (max 5s)
             for attempt in range(10):
                 time.sleep(0.5)
                 for ext in [f".{AUDIO_FORMAT}", ".mp3", ".m4a", ".webm"]:
                     file_path = os.path.join(DOWNLOAD_DIR, f"{title_safe}{ext}")
                     if os.path.exists(file_path):
                         logger.info(
-                            f"File trovato dopo attesa ({attempt + 1} tentativi): {file_path}"
+                            f"File found after waiting ({attempt + 1} attempts): {file_path}"
                         )
                         return file_path
 
             logger.error(
-                f"Download completato ma file non trovato per '{query_or_url}' "
-                f"(titolo atteso: '{title_safe}')"
+                f"Download completed but file not found for '{query_or_url}' "
+                f"(expected title: '{title_safe}')"
             )
             return None
 
         except Exception as e:
             logger.error(
-                f"Errore nel download di '{query_or_url}': {type(e).__name__}: {e}",
+                f"Error downloading '{query_or_url}': {type(e).__name__}: {e}",
                 exc_info=True,
             )
             return None
 
     def get_random_downloaded_file(self) -> Optional[str]:
-        """Sceglie un file audio casuale dalla cartella di download."""
+        """Selects a random audio file from the download folder."""
         try:
             files = os.listdir(DOWNLOAD_DIR)
             audio_files = [
@@ -409,13 +409,13 @@ class MusicDownloader:
             random_file = random.choice(audio_files)
             return os.path.join(DOWNLOAD_DIR, random_file)
         except Exception as e:
-            logger.error(f"Errore durante la scelta del file casuale: {e}")
+            logger.error(f"Error while selecting random file: {e}")
             return None
 
     def get_search_results(
         self, query: str, max_results: int = 5
     ) -> list[Dict[str, str]]:
-        """Cerca canzoni e ritorna una lista di risultati."""
+        """Searches for songs and returns a list of results."""
         search_query = f"ytsearch{max_results}:{query}"
         results = []
 
@@ -432,12 +432,12 @@ class MusicDownloader:
                             }
                         )
         except Exception as e:
-            logger.error(f"Errore nella ricerca per '{query}': {e}")
+            logger.error(f"Error in search for '{query}': {e}")
 
         return results
 
     def _get_local_file_duration(self, file_path: str) -> Optional[int]:
-        """Ottiene la durata di un file audio locale usando ffprobe."""
+        """Gets the duration of a local audio file using ffprobe."""
         try:
             result = subprocess.run(
                 [
@@ -462,7 +462,7 @@ class MusicDownloader:
         return None
 
     def _find_matching_file(self, query: str) -> Optional[str]:
-        """Trova un file locale che corrisponde alla query."""
+        """Finds a local file that matches the query."""
         try:
             files = os.listdir(DOWNLOAD_DIR)
             audio_extensions = (".mp3", ".m4a", ".wav", ".webm", ".flac", ".ogg")
@@ -479,11 +479,11 @@ class MusicDownloader:
                 if matched_words >= max(1, len(words) * 0.5):
                     return os.path.join(DOWNLOAD_DIR, filename)
         except OSError as e:
-            logger.debug(f"Errore nella ricerca file locale: {e}")
+            logger.debug(f"Error in local file search: {e}")
         return None
 
     def get_song_info(self, query_or_url: str) -> Optional[Dict[str, Any]]:
-        """Ottiene informazioni dettagliate su una canzone (titolo, durata, artista)."""
+        """Gets detailed information about a song (title, duration, artist)."""
         if not self._is_url(query_or_url):
             local_file = self._find_matching_file(query_or_url)
 
@@ -512,5 +512,5 @@ class MusicDownloader:
                 "uploader": info.get("uploader", ""),
             }
         except Exception as e:
-            logger.warning(f"Errore nell'estrazione info per '{query_or_url}': {e}")
+            logger.warning(f"Error extracting info for '{query_or_url}': {e}")
             return {"title": query_or_url, "duration": 0, "uploader": ""}
