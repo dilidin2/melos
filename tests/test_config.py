@@ -21,7 +21,6 @@ from main.config import (
     MAX_QUEUE_SIZE,
     DOWNLOAD_DIR,
     ADMIN_USERS,
-    WHITELIST_USERS,
     BLACKLIST_USERS,
     PLAYLIST_CREATE_COMMAND,
     PLAYLIST_VIEW_COMMAND,
@@ -32,10 +31,8 @@ from main.config import (
     PLAYLIST_LIST_COMMAND,
     PLAYLIST_POMPA_COMMAND,
     MAX_POMPA_SONGS,
-    ADMIN_WHITELIST_COMMAND,
     ADMIN_BLACKLIST_COMMAND,
     ADMIN_UNBLACKLIST_COMMAND,
-    ADMIN_WHITELIST_LIST_COMMAND,
     ADMIN_BLACKLIST_LIST_COMMAND,
     ADMIN_SKIP_COMMAND,
     ADMIN_REMOVE_QUEUE_COMMAND,
@@ -135,10 +132,6 @@ class TestConstants:
         """Test ADMIN_USERS is a list."""
         assert isinstance(ADMIN_USERS, list)
 
-    def test_whitelist_users_is_list(self):
-        """Test WHITELIST_USERS is a list."""
-        assert isinstance(WHITELIST_USERS, list)
-
     def test_blacklist_users_is_list(self):
         """Test BLACKLIST_USERS is a list."""
         assert isinstance(BLACKLIST_USERS, list)
@@ -181,10 +174,6 @@ class TestConstants:
         assert MAX_POMPA_SONGS == 5
 
     # Admin command constants
-    def test_admin_whitelist_command(self):
-        """Test ADMIN_WHITELIST_COMMAND is 'whitelist'."""
-        assert ADMIN_WHITELIST_COMMAND == "whitelist"
-
     def test_admin_blacklist_command(self):
         """Test ADMIN_BLACKLIST_COMMAND is 'blacklist'."""
         assert ADMIN_BLACKLIST_COMMAND == "blacklist"
@@ -192,10 +181,6 @@ class TestConstants:
     def test_admin_unblacklist_command(self):
         """Test ADMIN_UNBLACKLIST_COMMAND is 'unblacklist'."""
         assert ADMIN_UNBLACKLIST_COMMAND == "unblacklist"
-
-    def test_admin_whitelist_list_command(self):
-        """Test ADMIN_WHITELIST_LIST_COMMAND is 'whitelist_list'."""
-        assert ADMIN_WHITELIST_LIST_COMMAND == "whitelist_list"
 
     def test_admin_blacklist_list_command(self):
         """Test ADMIN_BLACKLIST_LIST_COMMAND is 'blacklist_list'."""

@@ -84,13 +84,9 @@ def mock_playlist_manager():
 def mock_admin_handler():
     """Create a mock AdminHandler."""
     handler = MagicMock()
-    handler.add_whitelist = MagicMock(return_value=True)
-    handler.remove_whitelist = MagicMock(return_value=True)
     handler.add_blacklist = MagicMock(return_value=True)
     handler.remove_blacklist = MagicMock(return_value=True)
-    handler.get_whitelist_list = MagicMock(return_value=[])
     handler.get_blacklist_list = MagicMock(return_value=[])
-    handler.is_whitelisted = MagicMock(return_value=False)
     handler.is_blacklisted = MagicMock(return_value=False)
     return handler
 
@@ -196,10 +192,8 @@ def mock_config():
         "PLAYLIST_LIST_COMMAND": "lista_playlist",
         "PLAYLIST_POMPA_COMMAND": "pompa",
         "MAX_POMPA_SONGS": 5,
-        "ADMIN_WHITELIST_COMMAND": "whitelist",
         "ADMIN_BLACKLIST_COMMAND": "blacklist",
         "ADMIN_UNBLACKLIST_COMMAND": "unblacklist",
-        "ADMIN_WHITELIST_LIST_COMMAND": "whitelist_list",
         "ADMIN_BLACKLIST_LIST_COMMAND": "blacklist_list",
         "ADMIN_SKIP_COMMAND": "skippa",
         "ADMIN_REMOVE_QUEUE_COMMAND": "rimuovi_coda",

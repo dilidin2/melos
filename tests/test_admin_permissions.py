@@ -31,16 +31,6 @@ class TestAdminPermissionsCommandProcessor:
     # --- Non-admin blocked ---
 
     @pytest.mark.asyncio
-    async def test_non_admin_blocked_whitelist(self, mock_services):
-        """Non-admin user gets permission error on !whitelist."""
-        proc = self._make_processor(mock_services, admin_users=[])
-        result = await proc.process("!whitelist targetuser", "randomuser", "ch")
-        assert result is True
-        mock_services.bot.chat_message.send_public.assert_called_once()
-        msg = mock_services.bot.chat_message.send_public.call_args[0][1]
-        assert "⛔ Non hai i permessi" in msg
-
-    @pytest.mark.asyncio
     async def test_non_admin_blocked_blacklist(self, mock_services):
         """Non-admin user gets permission error on !blacklist."""
         proc = self._make_processor(mock_services, admin_users=[])
@@ -54,15 +44,6 @@ class TestAdminPermissionsCommandProcessor:
         """Non-admin user gets permission error on !unblacklist."""
         proc = self._make_processor(mock_services, admin_users=[])
         result = await proc.process("!unblacklist targetuser", "randomuser", "ch")
-        assert result is True
-        msg = mock_services.bot.chat_message.send_public.call_args[0][1]
-        assert "⛔ Non hai i permessi" in msg
-
-    @pytest.mark.asyncio
-    async def test_non_admin_blocked_whitelist_list(self, mock_services):
-        """Non-admin user gets permission error on !whitelist_list."""
-        proc = self._make_processor(mock_services, admin_users=[])
-        result = await proc.process("!whitelist_list", "randomuser", "ch")
         assert result is True
         msg = mock_services.bot.chat_message.send_public.call_args[0][1]
         assert "⛔ Non hai i permessi" in msg
@@ -113,19 +94,6 @@ class TestAdminPermissionsCommandProcessor:
         assert "⛔ Non hai i permessi" in msg
 
     # --- Admin allowed ---
-
-    @pytest.mark.asyncio
-    async def test_admin_allowed_whitelist(self, mock_services):
-        """Admin user can execute !whitelist."""
-        mock_services.admin_commands.cmd_whitelist = AsyncMock(
-            return_value="✅ targetuser aggiunto alla whitelist."
-        )
-        proc = self._make_processor(mock_services, admin_users=["admin1"])
-        result = await proc.process("!whitelist targetuser", "admin1", "ch")
-        assert result is True
-        mock_services.admin_commands.cmd_whitelist.assert_called_once()
-        msg = mock_services.bot.chat_message.send_public.call_args[0][1]
-        assert "⛔" not in msg
 
     @pytest.mark.asyncio
     async def test_admin_allowed_skippa(self, mock_services):
@@ -213,10 +181,8 @@ class TestAdminPermissionsAdminCommands:
     @pytest.fixture
     def mock_admin_handler(self):
         handler = MagicMock()
-        handler.add_whitelist = MagicMock(return_value=True)
         handler.add_blacklist = MagicMock(return_value=True)
         handler.remove_blacklist = MagicMock(return_value=True)
-        handler.get_whitelist_list = MagicMock(return_value=["user1"])
         handler.get_blacklist_list = MagicMock(return_value=[])
         return handler
 
@@ -243,23 +209,6 @@ class TestAdminPermissionsAdminCommands:
                 audio_player=audio_player,
                 request_queue=request_queue,
             )
-
-    @pytest.mark.asyncio
-    async def test_admin_whitelist_blocks_non_admin(self, mock_admin_handler):
-        """cmd_whitelist blocks non-admin at method level."""
-        cmd = self._make_admin_commands(mock_admin_handler, None, None, admin_users=["admin1"])
-        result = await cmd.cmd_whitelist("randomuser", "target")
-        assert "⛔ Non hai i permessi" in result
-        mock_admin_handler.add_whitelist.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_admin_whitelist_allows_admin(self, mock_admin_handler):
-        """cmd_whitelist allows admin at method level."""
-        cmd = self._make_admin_commands(mock_admin_handler, None, None, admin_users=["admin1"])
-        result = await cmd.cmd_whitelist("admin1", "target")
-        assert "⛔" not in result
-        assert "✅" in result
-        mock_admin_handler.add_whitelist.assert_called_once_with("target")
 
     @pytest.mark.asyncio
     async def test_admin_blacklist_blocks_non_admin(self, mock_admin_handler):
@@ -294,13 +243,6 @@ class TestAdminPermissionsAdminCommands:
         """cmd_rimuovi_coda blocks non-admin at method level."""
         cmd = self._make_admin_commands(None, None, mock_request_queue, admin_users=["admin1"])
         result = await cmd.cmd_rimuovi_coda("randomuser", "1")
-        assert "⛔ Non hai i permessi" in result
-
-    @pytest.mark.asyncio
-    async def test_admin_whitelist_list_blocks_non_admin(self, mock_admin_handler):
-        """cmd_whitelist_list blocks non-admin at method level."""
-        cmd = self._make_admin_commands(mock_admin_handler, None, None, admin_users=["admin1"])
-        result = await cmd.cmd_whitelist_list("randomuser")
         assert "⛔ Non hai i permessi" in result
 
     @pytest.mark.asyncio

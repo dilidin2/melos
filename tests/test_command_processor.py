@@ -131,14 +131,6 @@ class TestCommandProcessor:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_process_whitelist_command(self, processor, mock_command_services):
-        """Test processing !whitelist command."""
-        mock_command_services.admin_commands.cmd_whitelist = AsyncMock(return_value="Added to whitelist")
-        
-        result = await processor.process("!whitelist testuser", "user", "ch")
-        assert result is True
-
-    @pytest.mark.asyncio
     async def test_process_blacklist_command(self, processor, mock_command_services):
         """Test processing !blacklist command."""
         mock_command_services.admin_commands.cmd_blacklist = AsyncMock(return_value="Added to blacklist")
@@ -320,14 +312,6 @@ class TestCommandProcessor:
         mock_command_services.admin_commands.cmd_unblacklist = AsyncMock(return_value="Unblacklisted")
         
         result = await processor.process("!unblacklist testuser", "user", "ch")
-        assert result is True
-
-    @pytest.mark.asyncio
-    async def test_process_whitelist_list_command(self, processor, mock_command_services):
-        """Test processing !whitelist_list command."""
-        mock_command_services.admin_commands.cmd_whitelist_list = AsyncMock(return_value="Whitelist list")
-        
-        result = await processor.process("!whitelist_list", "user", "ch")
         assert result is True
 
     @pytest.mark.asyncio
