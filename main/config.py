@@ -149,6 +149,16 @@ UTILITY_VERSION_COMMAND: str = "version"
 UTILITY_UPTIME_COMMAND: str = "uptime"
 
 # ====================
+# VOTE TO SKIP CONFIGURATION
+# ====================
+
+# Command to vote for skipping the current song
+VOTE_SKIP_COMMAND: str = "vote"
+
+# Number of different users needed to trigger a skip
+VOTE_REQUIRED_COUNT: int = 3
+
+# ====================
 # RANDOM SONG COOLDOWN CONFIGURATION
 # ====================
 

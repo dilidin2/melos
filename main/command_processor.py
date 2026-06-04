@@ -39,6 +39,7 @@ from main.config import (
     MUSIC_DURATA_COMMAND,
     MUSIC_WHEN_COMMAND,
     MUSIC_RANDOM_COMMAND,
+    VOTE_SKIP_COMMAND,
     UTILITY_HELP_COMMAND,
     UTILITY_VERSION_COMMAND,
     UTILITY_UPTIME_COMMAND,
@@ -101,6 +102,7 @@ class CommandProcessor:
         util_help = re.escape(UTILITY_HELP_COMMAND)
         util_version = re.escape(UTILITY_VERSION_COMMAND)
         util_uptime = re.escape(UTILITY_UPTIME_COMMAND)
+        vote_skip = re.escape(VOTE_SKIP_COMMAND)
 
         raw_patterns = {
             rf"{prefix}{sr_prefix}\s+(.+)$": "cmd_sr",
@@ -138,6 +140,7 @@ class CommandProcessor:
             rf"{prefix}{util_help}(?:\s+(\w+))?$": "cmd_help",
             rf"{prefix}{util_version}$": "cmd_version",
             rf"{prefix}{util_uptime}$": "cmd_uptime",
+            rf"{prefix}{vote_skip}$": "cmd_vote",
         }
 
         self.compiled_commands: list[CompiledPattern] = [
@@ -428,3 +431,11 @@ class CommandProcessor:
     async def cmd_uptime(self, username: str, channel_id: str):
         """!uptime - Uptime."""
         return await self.services.utility_commands.cmd_uptime(username)
+
+    # =====================================================================
+    # VOTE TO SKIP
+    # =====================================================================
+
+    async def cmd_vote(self, username: str, channel_id: str):
+        """!vote - Vote to skip the current song."""
+        return await self.services.music_commands.cmd_vote(username)

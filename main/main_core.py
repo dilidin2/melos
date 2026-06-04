@@ -13,6 +13,7 @@ from main.config import (
     LOG_LEVEL,
     LOG_FILE,
     DOWNLOAD_DIR,
+    VOTE_REQUIRED_COUNT,
 )
 
 from main.music_downloader import (
@@ -131,6 +132,10 @@ class SongRequestBot:
 
         # Tracks the last random song played to avoid consecutive repetitions
         self.last_random_song: Optional[str] = None
+
+        # Vote-to-skip tracking for the currently playing song
+        self._vote_skip_voters: set[str] = set()
+        self._vote_active: bool = False
 
         self.executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
@@ -341,6 +346,10 @@ class SongRequestBot:
                 actual_title = os.path.splitext(os.path.basename(file_path))[0]
                 request.resolved_title = actual_title
 
+            # Reset votes for the new song
+            self.reset_votes()
+            self._vote_active = True
+
             notification = f"{request.resolved_title or request.query} - @{request.username}"
             success = await self._play_audio_file(
                 request.channel_id, file_path, notification
@@ -455,6 +464,9 @@ class SongRequestBot:
 
                             song_name = os.path.splitext(selected)[0]
                             notification = f"Playing random: {song_name}"
+                            # Enable votes for random songs too
+                            self.reset_votes()
+                            self._vote_active = True
                             await self._play_audio_file(
                                 TARGET_CHANNEL, random_file, notification
                             )
@@ -472,7 +484,21 @@ class SongRequestBot:
             return False
 
         self.audio_player.stop()
+        self.reset_votes()
         return True
+
+    def process_vote(self, username: str) -> bool:
+        """Registers a vote to skip the currently playing song.
+
+        Returns True if the required number of votes was reached and the song should be skipped.
+        """
+        self._vote_skip_voters.add(username.lower())
+        return len(self._vote_skip_voters) >= VOTE_REQUIRED_COUNT
+
+    def reset_votes(self):
+        """Resets vote tracking for a new song."""
+        self._vote_skip_voters.clear()
+        self._vote_active = False
 
     def _signal_handler(self):
         """Handler for SIGINT/SIGTERM."""

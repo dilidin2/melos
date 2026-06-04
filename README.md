@@ -9,6 +9,7 @@ A Twitch chat bot for requesting and playing music directly in your stream via c
 - 🎵 **Song Requests** — Type `!sr <song name>` in chat to add songs to a queue
 - 📻 **YouTube Music Downloading** — Downloads music from YouTube (Music category only, max 15 min)
 - 🔊 **Audio Playback** — Plays songs in real-time using Pygame
+- 🗳️ **Democratic Skip** — 3 different users can vote `!vote` to skip the current song
 - 📋 **Persistent Queue** — Queue survives bot restarts (saved to JSON)
 - 🎲 **Random Playback** — Plays random songs from your downloads folder when the queue is empty
 - 📊 **Analytics** — Tracks requests, plays, top songs, and top users
@@ -74,6 +75,7 @@ The bot will connect to your Twitch channel and start listening for commands.
 | Command | Description |
 |---------|-------------|
 | `!sr <query>` | Request a song |
+| `!vote` | Vote to skip the current song (needs 3 different users) |
 | `!random [N]` | Play N random songs from library |
 | `!duration <song>` | Show song duration |
 | `!durata <N>` | Show duration of song at position N in queue |

@@ -161,6 +161,8 @@ class TwitchHandler:
             self.chat.register_command("duration", self._handle_other_command)
             self.chat.register_command("when", self._handle_other_command)
             self.chat.register_command("random", self._handle_other_command)
+            # Vote to skip
+            self.chat.register_command("vote", self._handle_other_command)
             # Utility commands
             self.chat.register_command("help", self._handle_other_command)
             self.chat.register_command("version", self._handle_other_command)

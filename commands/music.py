@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 
+from main.config import VOTE_REQUIRED_COUNT
+
 if TYPE_CHECKING:
     from main.audio_player import AudioPlayer
     from main.main_core import RequestQueue
@@ -281,7 +283,7 @@ class MusicCommands:
         """!random [N] - Plays N random songs from the downloaded library."""
         import os
         import random as random_module
-        from main.config import DOWNLOAD_DIR
+        from main.config import DOWNLOAD_DIR, VOTE_REQUIRED_COUNT
         from main.main_core import SongRequest
 
         try:
@@ -331,3 +333,26 @@ class MusicCommands:
             for i, name in enumerate(song_names, 1):
                 lines.append(f"  {i}. {name}")
             return "\n".join(lines)
+
+    async def cmd_vote(self, username: str) -> str:
+        """!vote - Vote to skip the current song (needs N voters)."""
+        if not self._bot or not hasattr(self._bot, 'audio_player'):
+            return "❌ Bot not available."
+
+        if not self._bot.audio_player.is_playing():
+            return "❌ No song is currently playing."
+
+        if not self._bot._vote_active:
+            return "❌ No song currently accepting votes."
+
+        triggered = self._bot.process_vote(username)
+        voter_count = len(self._bot._vote_skip_voters)
+
+        if triggered:
+            self._bot.audio_player.stop()
+            self._bot.reset_votes()
+            voters_list = ', '.join(sorted(self._bot._vote_skip_voters))
+            return f"⏭️ Song skipped! ({VOTE_REQUIRED_COUNT}/{VOTE_REQUIRED_COUNT} votes: {voters_list})"
+        else:
+            remaining = VOTE_REQUIRED_COUNT - voter_count
+            return f"🗳️ Vote registered for @{username} ({voter_count}/{VOTE_REQUIRED_COUNT}). {remaining} more needed."
