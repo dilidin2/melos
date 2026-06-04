@@ -13,7 +13,7 @@ A Twitch chat bot for requesting and playing music directly in your stream via c
 - 🎲 **Random Playback** — Plays random songs from your downloads folder when the queue is empty
 - 📊 **Analytics** — Tracks requests, plays, top songs, and top users
 - 📁 **Playlists** — Create and manage custom playlists
-- 👑 **Admin Commands** — Whitelist/blacklist users, manage queue, skip songs
+- 👑 **Admin Commands** — Blacklist users, manage queue, skip songs
 - 🔁 **Repeat Modes** — Off, count-based, or infinite repeat
 - 🏷️ **Duplicate Detection** — Avoids re-downloading the same song
 
@@ -100,10 +100,8 @@ The bot will connect to your Twitch channel and start listening for commands.
 | `!svuota <playlist>` | Clear a playlist |
 | `!lista_playlist` | List all playlists |
 | `!pompa <playlist> [N]` | Pump N random songs from playlist |
-| `!whitelist <user>` | Whitelist a user (admin) |
 | `!blacklist <user>` | Blacklist a user (admin) |
 | `!unblacklist <user>` | Remove from blacklist (admin) |
-| `!whitelist_list` | Show whitelist (admin) |
 | `!blacklist_list` | Show blacklist (admin) |
 | `!skippa` / `!skip` | Skip current song (admin) |
 | `!rimuovi_coda <pos>` | Remove from queue (admin) |

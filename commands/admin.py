@@ -28,17 +28,6 @@ class AdminCommands:
         self.request_queue = request_queue
         self._bot = bot  # Reference to bot for queue persistence
 
-    async def cmd_whitelist(self, username: str, target_user: str) -> str:
-        """!whitelist <username> - Adds a user to the whitelist."""
-        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ You don't have permission to use this command."
-        if not self.admin_handler:
-            return "❌ Admin handler not available."
-
-        if self.admin_handler.add_whitelist(target_user):
-            return f"✅ {target_user} added to whitelist."
-        return f"❌ {target_user} is already on the whitelist."
-
     async def cmd_blacklist(self, username: str, target_user: str) -> str:
         """!blacklist <username> - Puts a user on the blacklist."""
         if username.lower() not in [u.lower() for u in ADMIN_USERS]:
@@ -60,24 +49,6 @@ class AdminCommands:
         if self.admin_handler.remove_blacklist(target_user):
             return f"✅ {target_user} removed from blacklist."
         return f"❌ {target_user} was not on the blacklist."
-
-    async def cmd_whitelist_list(self, username: str) -> str:
-        """!whitelist_list - Shows all whitelisted users."""
-        if username.lower() not in [u.lower() for u in ADMIN_USERS]:
-            return "⛔ You don't have permission to use this command."
-        if not self.admin_handler:
-            return "❌ Admin handler not available."
-
-        users = self.admin_handler.get_whitelist_list()
-
-        if not users:
-            return "📭 Whitelist is empty."
-
-        lines = [f"🛡️ Whitelist ({len(users)} users):"]
-        for user in users:
-            lines.append(f"  • {user}")
-
-        return "\n".join(lines)
 
     async def cmd_blacklist_list(self, username: str) -> str:
         """!blacklist_list - Shows all blacklisted users."""

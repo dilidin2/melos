@@ -93,9 +93,6 @@ MAX_QUEUE_SIZE: int = 50
 # Configurable via ADMIN_USERS environment variable (e.g. "user1,user2,user3")
 ADMIN_USERS: list[str] = [x.strip().lower() for x in os.getenv("ADMIN_USERS", "").split(",") if x.strip()]
 
-# Whitelist users (can request even without following)
-WHITELIST_USERS: list[str] = []
-
 # Blacklist users (cannot use the bot)
 BLACKLIST_USERS: list[str] = []
 
@@ -117,10 +114,8 @@ PLAYLIST_POMPA_COMMAND: str = "pump"
 MAX_POMPA_SONGS: int = 5
 
 # Admin commands
-ADMIN_WHITELIST_COMMAND: str = "whitelist"
 ADMIN_BLACKLIST_COMMAND: str = "blacklist"
 ADMIN_UNBLACKLIST_COMMAND: str = "unblacklist"
-ADMIN_WHITELIST_LIST_COMMAND: str = "whitelist_list"
 ADMIN_BLACKLIST_LIST_COMMAND: str = "blacklist_list"
 ADMIN_SKIP_COMMAND: str = "skip"
 

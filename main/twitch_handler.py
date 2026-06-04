@@ -138,10 +138,8 @@ class TwitchHandler:
             self.chat.register_command("list_playlists", self._handle_other_command)
             self.chat.register_command("pump", self._handle_other_command)
             # Admin commands
-            self.chat.register_command("whitelist", self._handle_other_command)
             self.chat.register_command("blacklist", self._handle_other_command)
             self.chat.register_command("unblacklist", self._handle_other_command)
-            self.chat.register_command("whitelist_list", self._handle_other_command)
             self.chat.register_command("blacklist_list", self._handle_other_command)
             self.chat.register_command("skip", self._handle_other_command)
             self.chat.register_command("remove_queue", self._handle_other_command)

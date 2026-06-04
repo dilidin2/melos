@@ -29,7 +29,7 @@ class UtilityCommands:
         if not command:
             return [
                 """📚 1/3 [MUSIC]: !sr <url/title> • !random [N] • !duration <song> • !at <N> • !when | [PLAYLIST]: !create <name> • !playlist [n] • !add <pl> <song> • !remove <pl> <pos> • !move <pl> <p1> <p2> • !clear <pl> • !list_playlists • !pump <pl> [N]""",
-                """📚 2/3 [MOD]: !whitelist/!blacklist/!unblacklist <user> • !whitelist_list/!blacklist_list • !skip • !remove_queue <pos> • !clear_queue • !queue_info | [STATS]: !stats • !top_songs [N] • !top_users [N] • !history_played [N]""",
+                """📚 2/3 [MOD]: !blacklist/!unblacklist <user> • !blacklist_list • !skip • !remove_queue <pos> • !clear_queue | [STATS]: !stats • !top_songs [N] • !top_users [N] • !history_played [N]""",
                 """📚 3/3 [CTRL]: !volume <0-100> • !pause/!resume • !repeat/!repeat_off • !repeat/!stop_repeat • !next • !queue_info | [UTIL]: !help [cmd] • !version • !uptime""",
             ]
 
@@ -44,10 +44,8 @@ class UtilityCommands:
                 "clear": "!clear <playlist> - Clear a playlist",
                 "list_playlists": "!list_playlists - Show all playlists",
                 "pump": "!pump <playlist> [N] - Pump N random songs from playlist",
-                "whitelist": "!whitelist <user> - Add to whitelist (admin)",
                 "blacklist": "!blacklist <user> - Add to blacklist (admin)",
                 "unblacklist": "!unblacklist <user> - Remove from blacklist (admin)",
-                "whitelist_list": "!whitelist_list - Show whitelist",
                 "blacklist_list": "!blacklist_list - Show blacklist",
                 "queue_info": "!queue_info - Show the next songs in the queue",
                 "skip": "!skip - Skip current song (admin)",

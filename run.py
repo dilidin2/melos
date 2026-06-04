@@ -36,11 +36,11 @@ setup_logger(log_file=LOG_FILE, level=LOG_LEVEL)
 
 async def main():
     """Main entry point."""
-    bot = SongRequestBot(audio_device="MusicaBot_Input")
+    admin_handler = AdminHandler()
+    bot = SongRequestBot(audio_device="MusicaBot_Input", admin_handler=admin_handler)
 
     # Initialize services
     playlist_manager = PlaylistManager()
-    admin_handler = AdminHandler()
     analytics = Analytics()
     music_downloader = MusicDownloader()
 

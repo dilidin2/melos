@@ -109,12 +109,13 @@ class DuplicateCache:
 class SongRequestBot:
     """Main bot for music requests."""
 
-    def __init__(self, audio_device=None):
+    def __init__(self, audio_device=None, admin_handler=None):
         """Initializes the bot."""
         self.music_downloader = MusicDownloader()
         self.audio_player = AudioPlayer(device_name=audio_device)
         self.twitch_handler = TwitchHandler()
         self.chat_message = ChatMessage(self.twitch_handler)
+        self.admin_handler = admin_handler
         self.request_queue = RequestQueue()
         self.duplicate_cache = DuplicateCache()
         self._running = False
@@ -138,6 +139,14 @@ class SongRequestBot:
 
     async def _handle_song_request(self, query: str, username: str, channel_id: str):
         """Handles a music request."""
+        # Block blacklisted users from requesting songs
+        if self.admin_handler and self.admin_handler.is_blacklisted(username):
+            await self.chat_message.send_public(
+                channel_id,
+                f"🚫 @{username} is blacklisted and cannot request songs.",
+            )
+            return
+
         if hasattr(self, "analytics"):
             self.analytics.record_request(username, query)
 

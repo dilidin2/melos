@@ -17,10 +17,8 @@ from main.config import (
     PLAYLIST_CLEAR_COMMAND,
     PLAYLIST_LIST_COMMAND,
     PLAYLIST_POMPA_COMMAND,
-    ADMIN_WHITELIST_COMMAND,
     ADMIN_BLACKLIST_COMMAND,
     ADMIN_UNBLACKLIST_COMMAND,
-    ADMIN_WHITELIST_LIST_COMMAND,
     ADMIN_BLACKLIST_LIST_COMMAND,
     ADMIN_SKIP_COMMAND,
     ADMIN_REMOVE_QUEUE_COMMAND,
@@ -46,6 +44,7 @@ from main.config import (
     UTILITY_UPTIME_COMMAND,
 )
 from main.services import CommandServices
+from commands import admin_required
 
 
 class CompiledPattern:
@@ -60,19 +59,10 @@ class CompiledPattern:
 class CommandProcessor:
     """Processes and handles all chat commands with explicit DI."""
 
-    # Methods that require admin permissions
-    ADMIN_COMMANDS: set[str] = {
-        "cmd_whitelist",
-        "cmd_blacklist",
-        "cmd_unblacklist",
-        "cmd_whitelist_list",
-        "cmd_blacklist_list",
-        "cmd_skip",
-        "cmd_remove_queue",
-        "cmd_clear_queue",
-    }
-
     def __init__(self, services: CommandServices):
+        self.services = services
+        # Dynamically discover which cmd_* methods require admin permissions
+        self._admin_methods: set[str] = self._build_admin_set()
         self.services = services
 
         prefix = re.escape(CHAT_COMMAND_PREFIX)
@@ -85,10 +75,8 @@ class CommandProcessor:
         p_clear = re.escape(PLAYLIST_CLEAR_COMMAND)
         p_list = re.escape(PLAYLIST_LIST_COMMAND)
         p_pompa = re.escape(PLAYLIST_POMPA_COMMAND)
-        a_whitelist = re.escape(ADMIN_WHITELIST_COMMAND)
         a_blacklist = re.escape(ADMIN_BLACKLIST_COMMAND)
         a_unblacklist = re.escape(ADMIN_UNBLACKLIST_COMMAND)
-        a_whitelist_list = re.escape(ADMIN_WHITELIST_LIST_COMMAND)
         a_blacklist_list = re.escape(ADMIN_BLACKLIST_LIST_COMMAND)
         a_skip = re.escape(ADMIN_SKIP_COMMAND)
         a_skip_alias = re.escape("skip")
@@ -124,10 +112,8 @@ class CommandProcessor:
             rf"{prefix}{p_clear}\s+(\w+)$": "cmd_clear",
             rf"{prefix}{p_list}": "cmd_list_playlists",
             rf"{prefix}{p_pompa}(?:\s+(\w+)(?:\s+(\d+))?)?$": "cmd_pump",
-            rf"{prefix}{a_whitelist}\s+(\w+)$": "cmd_whitelist",
             rf"{prefix}{a_blacklist}\s+(\w+)$": "cmd_blacklist",
             rf"{prefix}{a_unblacklist}\s+(\w+)$": "cmd_unblacklist",
-            rf"{prefix}{a_whitelist_list}$": "cmd_whitelist_list",
             rf"{prefix}{a_blacklist_list}$": "cmd_blacklist_list",
             rf"{prefix}{a_skip}$": "cmd_skip",
             rf"{prefix}{a_skip_alias}$": "cmd_skip",
@@ -158,6 +144,16 @@ class CommandProcessor:
             CompiledPattern(pattern, method) for pattern, method in raw_patterns.items()
         ]
 
+    def _build_admin_set(self) -> set[str]:
+        """Discover all cmd_* methods decorated with @admin_required."""
+        admin_set: set[str] = set()
+        for name in dir(self):
+            if name.startswith("cmd_"):
+                attr = getattr(self, name)
+                if callable(attr) and getattr(attr, "_requires_admin", False):
+                    admin_set.add(name)
+        return admin_set
+
     def _is_admin(self, username: str) -> bool:
         """Checks if a user has admin permissions."""
         return username.lower() in [u.lower() for u in ADMIN_USERS]
@@ -174,8 +170,8 @@ class CommandProcessor:
                 method = getattr(self, method_name, None)
 
                 if method:
-                    # Check permissions for admin commands
-                    if method_name in self.ADMIN_COMMANDS and not self._is_admin(username):
+                    # Check permissions for admin commands (discovered via @admin_required)
+                    if method_name in self._admin_methods and not self._is_admin(username):
                         await self._send_public(channel_id, "⛔ You don't have permission to use this command.")
                         return True
 
@@ -284,34 +280,32 @@ class CommandProcessor:
     # ADMIN COMMANDS
     # =====================================================================
 
-    async def cmd_whitelist(self, target_user: str, username: str, channel_id: str):
-        """!whitelist <utente> - Aggiungi whitelist."""
-        return await self.services.admin_commands.cmd_whitelist(username, target_user)
-
+    @admin_required
     async def cmd_blacklist(self, target_user: str, username: str, channel_id: str):
         """!blacklist <utente> - Aggiungi blacklist."""
         return await self.services.admin_commands.cmd_blacklist(username, target_user)
 
+    @admin_required
     async def cmd_unblacklist(self, target_user: str, username: str, channel_id: str):
         """!unblacklist <utente> - Rimuovi blacklist."""
         return await self.services.admin_commands.cmd_unblacklist(username, target_user)
 
-    async def cmd_whitelist_list(self, username: str, channel_id: str):
-        """!whitelist_list - Mostra whitelist."""
-        return await self.services.admin_commands.cmd_whitelist_list(username)
-
+    @admin_required
     async def cmd_blacklist_list(self, username: str, channel_id: str):
         """!blacklist_list - Mostra blacklist."""
         return await self.services.admin_commands.cmd_blacklist_list(username)
 
+    @admin_required
     async def cmd_skip(self, username: str, channel_id: str):
         """!skip - Skip song."""
         return await self.services.admin_commands.cmd_skip(username)
 
+    @admin_required
     async def cmd_remove_queue(self, position: str, username: str, channel_id: str):
         """!remove_queue <pos> - Remove from queue."""
         return await self.services.admin_commands.cmd_remove_queue(username, position)
 
+    @admin_required
     async def cmd_clear_queue(self, username: str, channel_id: str):
         """!clear_queue - Clear queue."""
         return await self.services.admin_commands.cmd_clear_queue(username)
