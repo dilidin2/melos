@@ -309,6 +309,12 @@ class CommandProcessor:
         return await self.services.admin_commands.cmd_remove_queue(username, position)
 
     @admin_required
+    async def cmd_volume(self, level: str, username: str, channel_id: str):
+        """!volume <0-100> - Set volume (admin)."""
+        level = int(level)
+        return await self.services.admin_commands.cmd_volume(username, level)
+
+    @admin_required
     async def cmd_clear_queue(self, username: str, channel_id: str):
         """!clear_queue - Clear queue."""
         return await self.services.admin_commands.cmd_clear_queue(username)
@@ -335,10 +341,7 @@ class CommandProcessor:
     # MUSIC COMMANDS
     # =====================================================================
 
-    async def cmd_volume(self, level: str, username: str, channel_id: str):
-        """!volume <0-100> - Set volume."""
-        level = int(level)
-        return await self.services.music_commands.cmd_volume(username, level)
+
 
     async def cmd_pause(self, username: str, channel_id: str):
         """!pause - Pause."""

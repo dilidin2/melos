@@ -30,24 +30,6 @@ class MusicCommands:
         self._music_downloader = music_downloader
         self._bot = bot  # Reference to bot to access repeat settings
 
-    async def cmd_volume(self, username: str, level: int) -> str:
-        """!volume <0-100> - Set or show current volume.
-
-        If level is provided, sets volume (0-100).
-        If not provided, shows current volume.
-        """
-        if level < 0 or level > 100:
-            return "❌ Volume level must be between 0 and 100."
-
-        # Set volume using pygame (0.0-1.0)
-        if self.audio_player:
-            pygame_volume = level / 100.0
-            import pygame
-            pygame.mixer.music.set_volume(pygame_volume)
-            logger.info(f"Volume set to {level}% by @{username}")
-
-        return f"🔊 Volume set to {level}%"
-
     async def cmd_pause(self, username: str) -> str:
         """!pause - Pauses playback."""
         if not self.audio_player or not self.audio_player.is_playing():
