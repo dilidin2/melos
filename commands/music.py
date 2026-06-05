@@ -316,6 +316,36 @@ class MusicCommands:
                 lines.append(f"  {i}. {name}")
             return "\n".join(lines)
 
+    async def cmd_ops(self, username: str) -> str:
+        """!ops - Remove the last song you added from the queue."""
+        if not self._request_queue:
+            return "❌ Unable to access the queue."
+
+        queue_list = self._request_queue.queue._queue
+        # Search from the end to find the LAST song by this user
+        user_request = None
+        for i in range(len(queue_list) - 1, -1, -1):
+            if queue_list[i].username == username:
+                user_request = queue_list[i]
+                del queue_list[i]
+                break
+
+        if user_request is None:
+            return "❌ You don't have any songs in the queue."
+
+        # Use the user's original query — no online lookup needed
+        title = user_request.query
+
+        # Persist the change
+        if self._bot and hasattr(self._bot, '_persist_queue'):
+            import asyncio
+            try:
+                asyncio.create_task(self._bot._persist_queue())
+            except Exception:
+                pass
+
+        return f"🗑️ Removed **{title}** from the queue (your last song)."
+
     async def cmd_vote(self, username: str) -> str:
         """!vote - Vote to skip the current song (needs N voters)."""
         if not self._bot or not hasattr(self._bot, 'audio_player'):

@@ -142,6 +142,7 @@ MUSIC_DURATION_COMMAND: str = "duration"
 MUSIC_DURATA_COMMAND: str = "at"
 MUSIC_WHEN_COMMAND: str = "when"
 MUSIC_RANDOM_COMMAND: str = "random"
+MUSIC_OPS_COMMAND: str = "ops"
 
 # Utility commands
 UTILITY_HELP_COMMAND: str = "help"

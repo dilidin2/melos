@@ -30,7 +30,7 @@ class UtilityCommands:
             return [
                 """📚 1/3 [MUSIC]: !sr <url/title> • !random [N] • !duration <song> • !at <N> • !when | [PLAYLIST]: !create <name> • !playlist [n] • !add <pl> <song> • !remove <pl> <pos> • !move <pl> <p1> <p2> • !clear <pl> • !list_playlists • !pump <pl> [N]""",
                 """📚 2/3 [MOD]: !blacklist/!unblacklist <user> • !blacklist_list • !skip • !remove_queue <pos> • !clear_queue • !volume <0-100> | [STATS]: !stats • !top_songs [N] • !top_users [N] • !history_played [N]""",
-                """📚 3/3 [CTRL]: !pause/!resume • !repeat/!repeat_off • !repeat/!stop_repeat • !next • !queue_info | [UTIL]: !help [cmd] • !version • !uptime""",
+                """📚 3/3 [CTRL]: !pause/!resume • !repeat/!repeat_off • !repeat/!stop_repeat • !next • !queue_info • !ops | [UTIL]: !help [cmd] • !version • !uptime""",
             ]
 
         else:
@@ -68,6 +68,7 @@ class UtilityCommands:
                 "random": "!random [N] - Play N random songs from library",
                 "help": "!help [command] - Show help",
                 "version": "!version - Show bot version",
+                "ops": "!ops - Remove the last song you added from the queue",
                 "uptime": "!uptime - Show uptime",
             }
 

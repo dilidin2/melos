@@ -39,6 +39,7 @@ from main.config import (
     MUSIC_DURATA_COMMAND,
     MUSIC_WHEN_COMMAND,
     MUSIC_RANDOM_COMMAND,
+    MUSIC_OPS_COMMAND,
     VOTE_SKIP_COMMAND,
     UTILITY_HELP_COMMAND,
     UTILITY_VERSION_COMMAND,
@@ -99,6 +100,7 @@ class CommandProcessor:
         mus_durata = re.escape(MUSIC_DURATA_COMMAND)
         mus_when = re.escape(MUSIC_WHEN_COMMAND)
         mus_random = re.escape(MUSIC_RANDOM_COMMAND)
+        mus_ops = re.escape(MUSIC_OPS_COMMAND)
         util_help = re.escape(UTILITY_HELP_COMMAND)
         util_version = re.escape(UTILITY_VERSION_COMMAND)
         util_uptime = re.escape(UTILITY_UPTIME_COMMAND)
@@ -136,6 +138,7 @@ class CommandProcessor:
             rf"{prefix}{mus_durata}\s+(\d+)$": "cmd_at",
             rf"{prefix}{mus_when}$": "cmd_when",
             rf"{prefix}{mus_random}(?:\s+(\d+))?$": "cmd_random",
+            rf"{prefix}{mus_ops}$": "cmd_ops",
             rf"{prefix}{stat_storia}(?:\s+(\d+))?$": "cmd_history",
             rf"{prefix}{util_help}(?:\s+(\w+))?$": "cmd_help",
             rf"{prefix}{util_version}$": "cmd_version",
@@ -394,6 +397,10 @@ class CommandProcessor:
         """!random [N] - Play N random songs from library."""
         n = int(n_str) if n_str else 1
         return await self.services.music_commands.cmd_random(username, n)
+
+    async def cmd_ops(self, username: str, channel_id: str):
+        """!ops - Remove the last song you added from the queue."""
+        return await self.services.music_commands.cmd_ops(username)
 
     async def cmd_history(self, n_str: Optional[str], username: str, channel_id: str):
         """!history [N] - History of last N songs played."""
