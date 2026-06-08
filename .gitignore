@@ -25,6 +25,8 @@ wheels/
 venv/
 ENV/
 
+
+PI.md
 # IDE
 .vscode/
 .idea/
