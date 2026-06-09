@@ -21,10 +21,6 @@ class AudioPlayer:
         self._is_playing = False
         self._is_paused = False
 
-        # Configure SDL to use PipeWire/PulseAudio
-        os.environ["SDL_AUDIODRIVER"] = "pulse"
-        os.environ["PULSE_PROP"] = "application.name=MusicaBot media.role=music"
-
         pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
         logger.info("🎵 AudioPlayer initialized with pygame")
 
