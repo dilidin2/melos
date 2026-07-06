@@ -141,14 +141,17 @@ class PlaylistCommands:
                 return "📭 You don't have playlists. Use !pompa <playlist_name> [n]."
 
             if len(playlists) == 1:
-                playlist_name = playlists[0].nome
+                playlist_name = playlists[0].name
             else:
                 lines = ["🎯 You have multiple playlists. Specify a name:"]
                 for p in playlists:
                     lines.append(f"  • {p.nome}")
                 return "\n".join(lines)
 
-        songs = self.playlist_manager.pompa_songs(username, playlist_name, n)
+        songs, error_msg, still_in_queue = self.playlist_manager.pompa_songs(username, playlist_name, n)
+
+        if error_msg:
+            return error_msg
 
         if not songs:
             return f"❌ Playlist '{playlist_name}' not found or empty."

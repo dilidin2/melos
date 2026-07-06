@@ -36,6 +36,8 @@ class Playlist:
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     last_modified: str = field(default_factory=lambda: datetime.now().isoformat())
     recently_pumped_queries: list[str] = field(default_factory=list)
+    has_pumped: bool = field(default_factory=lambda: False)
+    last_pumped_queries: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -266,7 +268,7 @@ class PlaylistManager:
 
     def pompa_songs(
         self, username: str, playlist_name: str, n: int = 5
-    ) -> list[PlaylistSong]:
+    ) -> tuple[list[PlaylistSong], str, list[str]]:
         """Selects N random songs from the playlist, excluding the last pumped ones.
 
         Sliding window: each call forgets the previous one and selects N new ones.
@@ -275,10 +277,23 @@ class PlaylistManager:
         playlist = self.get_playlist_by_name(username, playlist_name)
 
         if not playlist:
-            return []
+            return [], "", []
 
         if len(playlist.songs) == 0:
-            return []
+            return [], "", []
+
+        # If user has pumped before, check if previous songs are still in the queue
+        if playlist.has_pumped:
+            # Check if any of the previously pumped songs are still in the queue
+            still_in_queue = []
+            for query in playlist.last_pumped_queries:
+                # Check if this song is still in the queue
+                if query in playlist.recently_pumped_queries:
+                    still_in_queue.append(query)
+
+            if still_in_queue:
+                # Some songs from previous pump are still in the queue
+                return [], "You can't pump this much!", still_in_queue
 
         # Filter songs not recently pumped
         excluded = set(playlist.recently_pumped_queries)
@@ -295,8 +310,10 @@ class PlaylistManager:
 
         # Update tracking with the selected songs' queries
         playlist.recently_pumped_queries = [s.query for s in selected]
+        playlist.has_pumped = True
+        playlist.last_pumped_queries = [s.query for s in selected]
         playlist.last_modified = datetime.now().isoformat()
 
         self._save_user_playlists(username)
 
-        return selected
+        return selected, "", []
