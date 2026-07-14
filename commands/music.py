@@ -77,6 +77,10 @@ class MusicCommands:
 
     async def cmd_repeat_off(self, username: str) -> str:
         """!repeat_off - Disables repeat."""
+        if self._bot and hasattr(self._bot, 'repeat_mode'):
+            self._bot.repeat_mode = 'off'
+            self._bot.repeat_remaining = 0
+            return "🔁 Repeat mode disabled"
         return "🔁 Repeat mode disabled"
 
     async def cmd_stop_repeat(self, username: str) -> str:
