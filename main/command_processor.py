@@ -1,6 +1,7 @@
 """Command Processor - Handles all Twitch commands with explicit DI."""
 
 import asyncio
+import time
 import re
 from typing import Optional
 from loguru import logger
@@ -312,12 +313,6 @@ class CommandProcessor:
         return await self.services.admin_commands.cmd_remove_queue(username, position)
 
     @admin_required
-    async def cmd_volume(self, level: str, username: str, channel_id: str):
-        """!volume <0-100> - Set volume (admin)."""
-        level = int(level)
-        return await self.services.admin_commands.cmd_volume(username, level)
-
-    @admin_required
     async def cmd_clear_queue(self, username: str, channel_id: str):
         """!clear_queue - Clear queue."""
         return await self.services.admin_commands.cmd_clear_queue(username)
@@ -354,8 +349,13 @@ class CommandProcessor:
         """!resume - Resume."""
         return await self.services.music_commands.cmd_resume(username)
 
+    # =====================================================================
+    # ADMIN COMMANDS (repeat/volume moved here for permission control)
+    # =====================================================================
+
+    @admin_required
     async def cmd_repeat(self, count: str, username: str, channel_id: str):
-        """!repeat [N] - Repeat song (N=1 or empty=infinite)."""
+        """!repeat [N] - Repeat song (N=1 or empty=infinite). Admin only."""
         if count is None:
             # No argument: infinite repeat
             return await self.services.music_commands.cmd_repeat(username, -1)
@@ -365,9 +365,16 @@ class CommandProcessor:
                 return await self.services.music_commands.cmd_repeat_off(username)
             return await self.services.music_commands.cmd_repeat(username, count)
 
+    @admin_required
     async def cmd_repeat_off(self, username: str, channel_id: str):
-        """!repeat_off - Disable repeat."""
+        """!repeat_off - Disable repeat. Admin only."""
         return await self.services.music_commands.cmd_repeat_off(username)
+
+    @admin_required
+    async def cmd_volume(self, level: str, username: str, channel_id: str):
+        """!volume <0-100> - Set volume (admin)."""
+        level = int(level)
+        return await self.services.music_commands.cmd_volume(username, level)
 
     async def cmd_stop_repeat(self, username: str, channel_id: str):
         """!stop_repeat - Stop repeat."""
@@ -440,7 +447,23 @@ class CommandProcessor:
 
     async def cmd_uptime(self, username: str, channel_id: str):
         """!uptime - Uptime."""
-        return await self.services.utility_commands.cmd_uptime(username)
+        bot = self.services.bot
+        if not bot or not hasattr(bot, "_start_time"):
+            return await self.services.utility_commands.cmd_uptime(username)
+        elapsed = time.time() - bot._start_time
+        days = int(elapsed // 86400)
+        hours = int((elapsed % 86400) // 3600)
+        minutes = int((elapsed % 3600) // 60)
+        seconds = int(elapsed % 60)
+        parts: list[str] = []
+        if days > 0:
+            parts.append(f"{days}d")
+        if hours > 0:
+            parts.append(f"{hours}h")
+        if minutes > 0 or len(parts) == 0:
+            parts.append(f"{minutes}m")
+        parts.append(f"{seconds}s")
+        return f"⏱️ Bot has been running for: {' '.join(parts)}"
 
     # =====================================================================
     # VOTE TO SKIP

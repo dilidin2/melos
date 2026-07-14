@@ -1,4 +1,5 @@
 import os
+import time
 import asyncio
 import signal
 from concurrent.futures import ThreadPoolExecutor
@@ -141,6 +142,9 @@ class SongRequestBot:
 
         self.queue_persistence = QueuePersistence()
         self.song_request_persistence = SongRequestPersistence()
+
+        # Bot start time for uptime tracking
+        self._start_time = time.time()
 
     async def _handle_song_request(self, query: str, username: str, channel_id: str):
         """Handles a music request."""
