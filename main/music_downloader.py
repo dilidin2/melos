@@ -462,7 +462,16 @@ class MusicDownloader:
         return None
 
     def _find_matching_file(self, query: str) -> Optional[str]:
-        """Finds a local file that matches the query."""
+        """Finds a local file that matches the query.
+
+        Uses word-boundary matching (via \b) instead of substring matching to
+        avoid false positives — e.g. "ft" would match "After Tonight" with
+        substring, but not with word boundaries.  Requires ALL query words to
+        match; if no file satisfies this the caller (get_song_info) falls back
+        to a YouTube search.  This is intentionally strict because returning
+        wrong data (wrong title, wrong duration) is worse than triggering an
+        extra network request.
+        """
         try:
             files = os.listdir(DOWNLOAD_DIR)
             audio_extensions = (".mp3", ".m4a", ".wav", ".webm", ".flac", ".ogg")
@@ -474,9 +483,13 @@ class MusicDownloader:
 
                 name_without_ext = os.path.splitext(filename)[0].lower()
                 words = query_lower.split()
-                matched_words = sum(1 for w in words if w in name_without_ext)
 
-                if matched_words >= max(1, len(words) * 0.5):
+                # Every word must appear as a whole word (word-boundary match)
+                matched_words = sum(
+                    1 for w in words if re.search(rf"\b{w}\b", name_without_ext)
+                )
+
+                if matched_words == len(words):
                     return os.path.join(DOWNLOAD_DIR, filename)
         except OSError as e:
             logger.debug(f"Error in local file search: {e}")

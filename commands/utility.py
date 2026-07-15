@@ -17,12 +17,10 @@ class UtilityCommands:
         request_queue: Optional["RequestQueue"] = None,
         music_downloader: Optional["MusicDownloader"] = None,
         bot_version: str = "1.0.0",
-        bot_uptime: str = "N/A",
     ):
         self.request_queue = request_queue
         self.music_downloader = music_downloader
         self.version = bot_version
-        self.uptime = bot_uptime
 
     async def cmd_help(self, username: str, command: str = "") -> Union[str, List[str]]:
         """!help [command] - Shows help."""
@@ -80,10 +78,6 @@ class UtilityCommands:
     async def cmd_version(self, username: str) -> str:
         """!version - Shows bot version."""
         return f"🔧 Twitch Song Request Bot v{self.version}"
-
-    async def cmd_uptime(self, username: str) -> str:
-        """!uptime - Shows uptime."""
-        return f"⏱️ Bot has been running for: {self.uptime}"
 
     async def cmd_queue_info(self, username: str, channel_id: str) -> str:
         """!queue_info - Shows the next 5 songs in the queue."""

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Optional
 from loguru import logger
 
 from main.config import VOTE_REQUIRED_COUNT
+from commands import admin_required
 
 if TYPE_CHECKING:
     from main.audio_player import AudioPlayer
@@ -30,16 +31,18 @@ class MusicCommands:
         self._music_downloader = music_downloader
         self._bot = bot  # Reference to bot to access repeat settings
 
+    @admin_required
     async def cmd_pause(self, username: str) -> str:
-        """!pause - Pauses playback."""
+        """!pause - Pauses playback (admin only)."""
         if not self.audio_player or not self.audio_player.is_playing():
             return "❌ No song currently playing."
 
         self.audio_player.pause()
         return "⏸️ Playback paused."
 
+    @admin_required
     async def cmd_resume(self, username: str) -> str:
-        """!resume - Resumes playback."""
+        """!resume - Resumes playback (admin only)."""
         if not self.audio_player or not self.audio_player.is_paused():
             return "❌ No song currently paused."
 

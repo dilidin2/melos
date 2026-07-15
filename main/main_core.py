@@ -45,13 +45,26 @@ class SongRequest:
 
 
 class RequestQueue:
-    """Manages the request queue."""
+    """Manages the request queue.
+
+    Thread-safety note: asyncio is single-threaded, so true concurrent access
+    never happens. The lock here protects against logical races at await
+    boundaries — e.g. an admin command swapping the internal deque while
+    _queue_processor has a reference to it between get() and task_done().
+
+    Pragmatic choice: we mutate the existing asyncio.Queue in-place (via its
+    internal _queue deque) rather than replacing self.queue with a new object.
+    This guarantees that any coroutine holding a reference to the old Queue
+    still operates on the same underlying data structure, avoiding stale-
+    reference bugs with task_done().
+    """
 
     def __init__(self, max_size: int = 999):
         self.queue: asyncio.Queue[SongRequest] = asyncio.Queue(maxsize=max_size)
         self.max_size = max_size
         self._request_counter = 0
         self._in_progress = False
+        self._lock = asyncio.Lock()
 
     async def put(self, request: SongRequest) -> bool:
         """Adds a request to the queue."""
@@ -84,6 +97,41 @@ class RequestQueue:
     def get_items(self, count: int = 10) -> list[SongRequest]:
         """Returns the next N requests without removing them from the queue."""
         return list(self.queue._queue)[:count]
+
+    async def clear(self):
+        """Svuota completamente la coda.
+
+        Mutates the existing Queue in-place (no reference swap) so that any
+        coroutine holding a stale reference still sees an empty deque.
+        Protected by _lock to prevent races with remove_by_index / get_items.
+        """
+        async with self._lock:
+            self.queue._queue.clear()
+
+    async def remove_by_index(self, index: int) -> Optional[SongRequest]:
+        """Rimuove un elemento alla posizione data (0-based).
+
+        Returns the removed SongRequest, or None if the index is out of range.
+        Mutates in-place and protected by _lock.
+        """
+        async with self._lock:
+            items = self.queue._queue  # the internal deque
+            if index < 0 or index >= len(items):
+                return None
+            # deque.rotate + popleft is O(k) where k=index, which is fine for
+            # queue sizes < 1000. Avoids creating a new list/deque.
+            items.rotate(-index)
+            removed = items.popleft()
+            items.rotate(index)
+            return removed
+
+    async def get_all_items(self) -> list[SongRequest]:
+        """Restituisce TUTTI gli elementi senza rimuoverli.
+
+        Protected by _lock so _persist_queue never reads during a mutation.
+        """
+        async with self._lock:
+            return list(self.queue._queue)
 
 
 class DuplicateCache:
@@ -182,7 +230,7 @@ class SongRequestBot:
 
     async def _persist_queue(self):
         """Converts the current queue to JSON and saves it."""
-        items = list(self.request_queue.queue._queue)
+        items = await self.request_queue.get_all_items()
 
         songs_data = [
             {
@@ -238,6 +286,10 @@ class SongRequestBot:
 
     async def _process_request(self, request: SongRequest) -> bool:
         """Processes a single request."""
+        # NOTE: _in_progress flag + _processing_lock work correctly today because
+        # _queue_processor runs as a single asyncio task. If download/playback is
+        # ever parallelized (e.g. pre-caching), this pattern must be replaced with
+        # a semaphore or event-based coordination to avoid race conditions.
         async with self._processing_lock:
             if self.request_queue.is_processing():
                 logger.warning(
