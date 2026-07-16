@@ -341,12 +341,14 @@ class CommandProcessor:
 
 
 
+    @admin_required
     async def cmd_pause(self, username: str, channel_id: str):
-        """!pause - Pause."""
+        """!pause - Pause (admin only)."""
         return await self.services.music_commands.cmd_pause(username)
 
+    @admin_required
     async def cmd_resume(self, username: str, channel_id: str):
-        """!resume - Resume."""
+        """!resume - Resume (admin only)."""
         return await self.services.music_commands.cmd_resume(username)
 
     # =====================================================================
