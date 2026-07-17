@@ -46,26 +46,48 @@ Create a `.env` file in the project root:
 
 ```
 TWITCH_CLIENT_ID=your_client_id
-TWITCH_CLIENT_SECRET=your_client_secret
 TARGET_CHANNEL=your_twitch_channel
-OAUTH_REDIRECT_URI=http://localhost:17563
 ADMIN_USERS=admin1,admin2
 LOG_LEVEL=INFO
 LOG_FILE=twitch_sr.log
 DOWNLOAD_DIR=./downloads
 ```
 
-To get your credentials:
+To get your Client ID:
 
 1. Visit the [Twitch Developer Console](https://dev.twitch.tv/console)
 2. Click **"Register Your Application"**
 3. Fill in the form:
    - **Name**: any name you like
-   - **OAuth Redirect URLs**: `http://localhost:17563`
+   - **OAuth Redirect URLs**: `http://localhost:17563` (placeholder, not used by DCF)
    - **Category**: `Chat Bot`
    - **Client Type**: `Confidential`
 4. Copy the **Client ID** shown on the page
-5. Under **Client Secret**, click **"New Secret"** and copy the generated value
+
+> **Note**: No Client Secret is needed — the bot uses Device Code Flow for OAuth authentication.
+
+### 5. Authenticate the bot
+
+On first run (or after deleting `tokens.json`), the bot will print a URL and a code in the console:
+
+```
+Twitch Device Code Flow — go to https://www.twitch.tv/activate and enter code: ABCD-1234
+```
+
+#### Option A — Use your streaming account (simplest)
+Open the URL in your browser **logged in with your main Twitch account**, enter the code, and authorize. The bot will authenticate as you and join the channel specified by `TARGET_CHANNEL`.
+
+#### Option B — Use a separate bot account (recommended for streams)
+If you want the bot to appear as a distinct user in chat:
+1. Create a separate Twitch account (e.g., `melos-bot`)
+2. Log into your browser with that account
+3. Open the URL printed by the bot and enter the code
+4. Authorize — the bot will now authenticate as the bot account
+5. It will join the channel specified by `TARGET_CHANNEL` (your streaming channel)
+
+In both cases, tokens are saved to `tokens.json` and auto-refreshed every ~4 hours.
+
+> **Key point**: The bot always joins the channel set in `TARGET_CHANNEL`, regardless of which account authenticates. The account you log in with is only the identity the bot uses in chat.
 
 ## Usage
 

@@ -167,8 +167,6 @@ def mock_config():
     # Only patch attributes that actually exist in main.config
     config_mocks = {
         "TWITCH_CLIENT_ID": "test_client_id",
-        "TWITCH_CLIENT_SECRET": "test_client_secret",
-        "OAUTH_REDIRECT_URI": "http://localhost:17563",
         "TARGET_CHANNEL": "testchannel",
         "DOWNLOAD_DIR": "/tmp/test_downloads",
         "MAX_DURATION_SECONDS": 900,

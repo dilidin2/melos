@@ -10,13 +10,8 @@ load_dotenv()
 # ====================
 
 # Client ID obtained from https://dev.twitch.tv/console
+# Used for Device Code Flow — no client secret needed
 TWITCH_CLIENT_ID: str = os.getenv("TWITCH_CLIENT_ID", "")
-
-# Client Secret obtained from https://dev.twitch.tv/console
-TWITCH_CLIENT_SECRET: str = os.getenv("TWITCH_CLIENT_SECRET", "")
-
-# Redirect URL for OAuth flow (must match the one configured in Twitch Dev Console)
-OAUTH_REDIRECT_URI: str = os.getenv("OAUTH_REDIRECT_URI", "http://localhost:17563")
 
 # Twitch channel to connect to (channel name WITHOUT #)
 TARGET_CHANNEL: str = os.getenv("TARGET_CHANNEL", "")

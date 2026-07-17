@@ -5,8 +5,6 @@ from unittest.mock import patch
 
 from main.config import (
     TWITCH_CLIENT_ID,
-    TWITCH_CLIENT_SECRET,
-    OAUTH_REDIRECT_URI,
     TARGET_CHANNEL,
     CHAT_COMMAND_PREFIX,
     SONG_REQUEST_COMMAND,
@@ -64,14 +62,6 @@ class TestConstants:
     def test_twitch_client_id(self):
         """Test TWITCH_CLIENT_ID is a string."""
         assert isinstance(TWITCH_CLIENT_ID, str)
-
-    def test_twitch_client_secret(self):
-        """Test TWITCH_CLIENT_SECRET is a string."""
-        assert isinstance(TWITCH_CLIENT_SECRET, str)
-
-    def test_oauth_redirect_uri(self):
-        """Test OAUTH_REDIRECT_URI has default value."""
-        assert OAUTH_REDIRECT_URI == "http://localhost:17563"
 
     def test_target_channel(self):
         """Test TARGET_CHANNEL is a string."""

@@ -14,10 +14,9 @@ class TestTwitchHandler:
         """Create a TwitchHandler instance."""
         with patch("main.twitch_handler.Chat"):
             with patch("main.twitch_handler.Twitch"):
-                with patch("main.twitch_handler.UserAuthenticator"):
-                    with patch("main.twitch_handler.AuthScope"):
-                        handler = TwitchHandler()
-                        return handler
+                with patch("main.twitch_handler.AuthScope"):
+                    handler = TwitchHandler()
+                    return handler
 
     def test_init(self, handler):
         """Test initialization."""

@@ -26,7 +26,7 @@ class UtilityCommands:
         """!help [command] - Shows help."""
         if not command:
             return [
-                """📚 1/3 [MUSIC]: !sr <url/title> • !random [N] • !duration <song> • !when | [PLAYLIST]: !create <name> • !playlist [n] • !add <pl> <song> • !remove <pl> <pos> • !move <pl> <p1> <p2> • !clear <pl> • !pump <pl> [N]""", cant_remove_0
+                """📚 1/3 [MUSIC]: !sr <url/title> • !random [N] • !duration <song> • !when | [PLAYLIST]: !create <name> • !playlist [n] • !add <pl> <song> • !remove <pl> <pos> • !move <pl> <p1> <p2> • !clear <pl> • !pump <pl> [N]""",
                 """📚 2/3 [MOD]: !blacklist/!unblacklist <user> • !blacklist_list • !skip • !remove_queue <pos> • !clear_queue • !volume <0-100> | [STATS]: !stats • !top_songs [N] • !top_users [N] • !history_played [N]""",
                 """📚 3/3 [CTRL]: !pause/!resume • !repeat/!repeat_off • !next • !queue_info • !ops | [UTIL]: !help [cmd] • !version • !uptime""",
             ]

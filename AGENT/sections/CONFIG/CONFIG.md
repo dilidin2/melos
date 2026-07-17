@@ -15,9 +15,7 @@ Centralized configuration loaded from `.env` file (via python-dotenv) with hardc
 ### Twitch Configuration
 | Variable | Default | Description |
 |----------|---------|-------------|
-| TWITCH_CLIENT_ID | "" | From Twitch Dev Console |
-| TWITCH_CLIENT_SECRET | "" | From Twitch Dev Console |
-| OAUTH_REDIRECT_URI | http://localhost:17563 | OAuth callback URL |
+| TWITCH_CLIENT_ID | "" | From Twitch Dev Console — used for Device Code Flow (no secret needed) |
 | TARGET_CHANNEL | "" | Channel to connect to (no #) |
 
 ### Command Configuration
