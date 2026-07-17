@@ -9,9 +9,9 @@ load_dotenv()
 # TWITCH CONFIGURATION
 # ====================
 
-# Client ID obtained from https://dev.twitch.tv/console
-# Used for Device Code Flow — no client secret needed
-TWITCH_CLIENT_ID: str = os.getenv("TWITCH_CLIENT_ID", "")
+# Twitch App Client ID — public identifier, not a secret.
+# Used for Device Code Flow (DCF) — no client secret required.
+TWITCH_CLIENT_ID: str = "7uyqomgf325fb3j3bztn9o1p51m85t"
 
 # Twitch channel to connect to (channel name WITHOUT #)
 TARGET_CHANNEL: str = os.getenv("TARGET_CHANNEL", "")

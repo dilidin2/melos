@@ -45,7 +45,6 @@ uv sync
 Create a `.env` file in the project root:
 
 ```
-TWITCH_CLIENT_ID=your_client_id
 TARGET_CHANNEL=your_twitch_channel
 ADMIN_USERS=admin1,admin2
 LOG_LEVEL=INFO
@@ -53,16 +52,7 @@ LOG_FILE=twitch_sr.log
 DOWNLOAD_DIR=./downloads
 ```
 
-To get your Client ID:
-
-1. Visit the [Twitch Developer Console](https://dev.twitch.tv/console)
-2. Click **"Register Your Application"**
-3. Fill in the form:
-   - **Name**: any name you like
-   - **OAuth Redirect URLs**: `http://localhost:17563` (placeholder, not used by DCF)
-   - **Category**: `Chat Bot`
-   - **Client Type**: `Confidential`
-4. Copy the **Client ID** shown on the page
+The bot uses a built-in Client ID for OAuth — no need to register your own app on Twitch.
 
 > **Note**: No Client Secret is needed — the bot uses Device Code Flow for OAuth authentication.
 
