@@ -21,6 +21,9 @@ from main.config import (
     ADMIN_UNBLACKLIST_COMMAND,
     ADMIN_BLACKLIST_LIST_COMMAND,
     ADMIN_SKIP_COMMAND,
+    ADMIN_TRUST_CHANNEL_COMMAND,
+    ADMIN_UNTRUST_CHANNEL_COMMAND,
+    ADMIN_TRUSTED_CHANNELS_LIST_COMMAND,
     ADMIN_REMOVE_QUEUE_COMMAND,
     ADMIN_CLEAR_QUEUE_COMMAND,
     ANALYTICS_STATS_COMMAND,
@@ -79,6 +82,9 @@ class CommandProcessor:
         a_blacklist_list = re.escape(ADMIN_BLACKLIST_LIST_COMMAND)
         a_skip = re.escape(ADMIN_SKIP_COMMAND)
         a_skip_alias = re.escape("skip")
+        a_trust_channel = re.escape(ADMIN_TRUST_CHANNEL_COMMAND)
+        a_untrust_channel = re.escape(ADMIN_UNTRUST_CHANNEL_COMMAND)
+        a_trusted_channels_list = re.escape(ADMIN_TRUSTED_CHANNELS_LIST_COMMAND)
         a_remove_queue = re.escape(ADMIN_REMOVE_QUEUE_COMMAND)
         a_clear_queue = re.escape(ADMIN_CLEAR_QUEUE_COMMAND)
         stat_stats = re.escape(ANALYTICS_STATS_COMMAND)
@@ -115,6 +121,9 @@ class CommandProcessor:
             rf"{prefix}{a_blacklist_list}$": "cmd_blacklist_list",
             rf"{prefix}{a_skip}$": "cmd_skip",
             rf"{prefix}{a_skip_alias}$": "cmd_skip",
+            rf"{prefix}{a_trust_channel}\s+(.+)$": "cmd_trust_channel",
+            rf"{prefix}{a_untrust_channel}\s+(\w+)$": "cmd_untrust_channel",
+            rf"{prefix}{a_trusted_channels_list}$": "cmd_trusted_channels_list",
             rf"{prefix}{a_remove_queue}\s+(\d+)$": "cmd_remove_queue",
             rf"{prefix}{a_clear_queue}$": "cmd_clear_queue",
             rf"{prefix}{stat_stats}$": "cmd_stats",
@@ -303,6 +312,21 @@ class CommandProcessor:
     async def cmd_skip(self, username: str, channel_id: str):
         """!skip - Skip song."""
         return await self.services.admin_commands.cmd_skip(username)
+
+    @admin_required
+    async def cmd_trust_channel(self, query_or_url: str, username: str, channel_id: str):
+        """!trust_channel <query_or_url> - Add YouTube channel to whitelist."""
+        return await self.services.admin_commands.cmd_trust_channel(username, query_or_url)
+
+    @admin_required
+    async def cmd_untrust_channel(self, channel_id_arg: str, username: str, channel_id: str):
+        """!untrust_channel <channel_id> - Remove YouTube channel from whitelist."""
+        return await self.services.admin_commands.cmd_untrust_channel(username, channel_id_arg)
+
+    @admin_required
+    async def cmd_trusted_channels_list(self, username: str, channel_id: str):
+        """!trusted_channels - Show trusted YouTube channels."""
+        return await self.services.admin_commands.cmd_trusted_channels_list(username)
 
     @admin_required
     async def cmd_remove_queue(self, position: str, username: str, channel_id: str):

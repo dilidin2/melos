@@ -22,6 +22,7 @@ from main.music_downloader import (
     _SongTooLongError,
     _CategoryError,
     _NoValidCandidateError,
+    _ChannelNotTrustedError,
 )
 from main.audio_player import AudioPlayer
 from main.twitch_handler import TwitchHandler
@@ -369,6 +370,16 @@ class SongRequestBot:
                 except _NoValidCandidateError as e:
                     logger.warning(
                         f"No valid candidate for '{request.query}' from @{request.username}: {e}"
+                    )
+                    await self.chat_message.send_error(
+                        request.channel_id,
+                        request.username,
+                        str(e),
+                    )
+                    return False
+                except _ChannelNotTrustedError as e:
+                    logger.warning(
+                        f"Channel not trusted for '{request.query}' from @{request.username}: {e}"
                     )
                     await self.chat_message.send_error(
                         request.channel_id,

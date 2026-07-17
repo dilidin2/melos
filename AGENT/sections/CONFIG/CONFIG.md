@@ -37,6 +37,8 @@ Centralized configuration loaded from `.env` file (via python-dotenv) with hardc
 | DOWNLOAD_DIR | "./downloads" | Audio file storage |
 | DOWNLOAD_TIMEOUT | 60 | Socket timeout in seconds |
 | YOUTUBE_CATEGORY | "Music" | Allowed YouTube category |
+| CHANNEL_WHITELIST_ENABLED | false | When true, only videos from trusted channels (!trust_channel) are downloaded |
+| TRUSTED_CHANNELS_FILE | "data/trusted_channels.json" | JSON file storing trusted channel IDs → names |
 
 ### Queue Configuration
 | Variable | Value | Description |
@@ -64,7 +66,7 @@ Centralized configuration loaded from `.env` file (via python-dotenv) with hardc
 
 ### Command Names (all ! prefixed in chat)
 - Playlist: create, playlist, add, remove, move, clear, list_playlists, pump
-- Admin: blacklist, unblacklist, blacklist_list, skip, remove_queue, clear_queue
+- Admin: blacklist, unblacklist, blacklist_list, trust_channel, untrust_channel, trusted_channels, skip, remove_queue, clear_queue
 - Analytics: stats, top_songs, top_users, history_played
 - Music: volume, pause, resume, repeat, repeat_off, stop_repeat, next, queue_info, duration, durata (at), when, random, ops
 - Utility: help, version, uptime

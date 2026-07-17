@@ -1,8 +1,11 @@
 """Admin Handler - Handles administration and moderation commands."""
 
 import json
+import shutil
 from pathlib import Path
 from typing import Optional
+
+from loguru import logger
 
 
 class AdminHandler:
@@ -14,14 +17,19 @@ class AdminHandler:
 
         self._whitelist: set[str] = set()
         self._blacklist: set[str] = set()
+        self._trusted_channels: dict[str, str] = {}  # channel_id -> channel_name
 
         self._load_lists()
+        self._load_trusted_channels()
 
     def _get_whitelist_file(self) -> Path:
         return self.data_dir / "whitelist.json"
 
     def _get_blacklist_file(self) -> Path:
         return self.data_dir / "blacklist.json"
+
+    def _get_trusted_channels_file(self) -> Path:
+        return self.data_dir / "trusted_channels.json"
 
     def _load_lists(self):
         """Loads whitelist and blacklist from disk."""
@@ -44,6 +52,36 @@ class AdminHandler:
                     self._blacklist = set(data.get("users", []))
             except (json.JSONDecodeError, KeyError):
                 pass
+
+    def _load_trusted_channels(self):
+        """Loads trusted YouTube channels from disk.
+
+        If the runtime file does not exist but an example seed file exists,
+        copies the example as the runtime file (bootstrap, one-shot).
+        """
+        tc_file = self._get_trusted_channels_file()
+        example_file = self.data_dir / "trusted_channels.example.json"
+
+        # Bootstrap: copy example → runtime if runtime doesn't exist yet
+        if not tc_file.exists() and example_file.exists():
+            shutil.copy2(str(example_file), str(tc_file))
+            logger.info(
+                "Nessuna whitelist canali trovata, uso il file di esempio come base"
+            )
+
+        if tc_file.exists():
+            try:
+                with open(tc_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    self._trusted_channels = dict(data.get("channels", {}))
+            except (json.JSONDecodeError, KeyError):
+                pass
+
+    def _save_trusted_channels(self):
+        """Saves trusted channels to disk."""
+        tc_file = self._get_trusted_channels_file()
+        with open(tc_file, "w", encoding="utf-8") as f:
+            json.dump({"channels": self._trusted_channels}, f, indent=2)
 
     def _save_whitelist(self):
         """Saves whitelist to disk."""
@@ -104,3 +142,31 @@ class AdminHandler:
     def get_blacklist_list(self) -> list[str]:
         """Gets the list of blacklisted users."""
         return list(self._blacklist)
+
+    # ------------------------------------------------------------------
+    # Trusted Channels (YouTube channel whitelist)
+    # ------------------------------------------------------------------
+
+    def add_trusted_channel(self, channel_id: str, channel_name: str) -> bool:
+        """Adds a YouTube channel to the trusted channels list."""
+        if channel_id not in self._trusted_channels:
+            self._trusted_channels[channel_id] = channel_name
+            self._save_trusted_channels()
+            return True
+        return False
+
+    def remove_trusted_channel(self, channel_id: str) -> bool:
+        """Removes a YouTube channel from the trusted channels list."""
+        if channel_id in self._trusted_channels:
+            del self._trusted_channels[channel_id]
+            self._save_trusted_channels()
+            return True
+        return False
+
+    def is_trusted_channel(self, channel_id: str) -> bool:
+        """Checks if a YouTube channel is trusted (case-sensitive)."""
+        return channel_id in self._trusted_channels
+
+    def get_trusted_channels(self) -> dict[str, str]:
+        """Gets the dict of trusted channels (channel_id -> name)."""
+        return dict(self._trusted_channels)

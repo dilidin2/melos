@@ -14,7 +14,8 @@ A Twitch chat bot for requesting and playing music directly in your stream via c
 - 🎲 **Random Playback** — Plays random songs from your downloads folder when the queue is empty
 - 📊 **Analytics** — Tracks requests, plays, top songs, and top users
 - 📁 **Playlists** — Create and manage custom playlists with `!pump` for random batch queuing
-- 👑 **Admin Commands** — Blacklist users, manage queue, skip songs, control volume
+- 👑 **Admin Commands** — Blacklist users, trusted channel whitelist, manage queue, skip songs, control volume
+- 🛡️ **Trusted Channel Whitelist** — Restrict downloads to specific YouTube channels (opt-in via `CHANNEL_WHITELIST_ENABLED`)
 - 🔁 **Repeat Modes** — Off, count-based, or infinite repeat
 - 💾 **Local File Matching** — Word-boundary matching on disk avoids re-downloading known songs
 - 🏷️ **Duplicate Detection** — LRU cache (100 entries) prevents redundant downloads
@@ -55,6 +56,17 @@ DOWNLOAD_DIR=./downloads
 The bot uses a built-in Client ID for OAuth — no need to register your own app on Twitch.
 
 > **Note**: No Client Secret is needed — the bot uses Device Code Flow for OAuth authentication.
+
+#### Channel whitelist (optional)
+By default, the bot downloads from any YouTube channel in the "Music" category. To restrict downloads to specific channels only:
+
+```
+CHANNEL_WHITELIST_ENABLED=true
+```
+
+When enabled, only videos from **trusted channels** are downloaded. The seed file `data/trusted_channels.example.json` ships with one pre-configured channel (NoCopyrightSounds). On first run, it is automatically copied to `data/trusted_channels.json`. Add more channels with `!trust_channel <query_or_url>`.
+
+> If you enable the whitelist but add no channels, **no video will pass validation**. Use `!trusted_channels` to see the current list.
 
 ### 5. Authenticate the bot
 
@@ -131,11 +143,24 @@ The bot will connect to your Twitch channel and start listening for commands. Pr
 | `!blacklist <user>` | Blacklist a user (blocks song requests) |
 | `!unblacklist <user>` | Remove a user from blacklist |
 | `!blacklist_list` | Show all blacklisted users |
+| `!trust_channel <query_or_url>` | Add a YouTube channel to the trusted whitelist (resolves from URL or search) |
+| `!untrust_channel <channel_id>` | Remove a channel from the trusted whitelist |
+| `!trusted_channels` | List all trusted channels with names and IDs |
 | `!skip` | Skip the current song |
 | `!remove_queue <pos>` | Remove a specific position from the queue |
 | `!clear_queue` | Clear the entire queue |
 
 Admin users are configured via the `ADMIN_USERS` environment variable (comma-separated usernames).
+
+### Trusted Channel Whitelist
+
+This feature restricts song downloads to videos from whitelisted YouTube channels. It is **disabled by default** — set `CHANNEL_WHITELIST_ENABLED=true` in `.env` to activate.
+
+- **Seed file**: `data/trusted_channels.example.json` ships with NoCopyrightSounds (NCS) pre-configured. On first run, it's copied to the runtime file `data/trusted_channels.json`.
+- **Add channels**: Admins use `!trust_channel <video_url>` or `!trust_channel <channel_name>` — the bot resolves the channel ID automatically via YouTube search.
+- **Remove channels**: `!untrust_channel <channel_id>` (exact ID, case-sensitive).
+- **View list**: `!trusted_channels` shows all trusted channels with readable names and IDs.
+- **Error feedback**: If all search results come from untrusted channels, the user gets a clear chat message: _"None of the search results come from a trusted channel. Use !trusted_channels to see authorized channels."_
 
 ### Analytics
 
@@ -180,9 +205,12 @@ melos/
 │   └── utility.py                      # Help, version, uptime, queue_info
 ├── utils/                              # Shared utilities
 │   └── logger.py                       # Loguru setup (console + file with rotation)
-├── data/                               # Persistent data (gitignored)
+├── data/                               # Persistent data (mostly gitignored)
+│   ├── trusted_channels.example.json   # Seed file (tracked in git, NCS pre-configured)
 │   ├── queue.json                      # Persisted request queue
 │   ├── blacklist.json                  # Blacklisted users
+│   ├── whitelist.json                  # Whitelisted users
+│   ├── trusted_channels.json           # Trusted YouTube channels (runtime, copied from example)
 │   ├── stats.json                      # Analytics data
 │   └── playlists/                      # Per-user playlist files
 ├── downloads/                          # Downloaded audio files (gitignored)
@@ -202,6 +230,8 @@ melos/
 - **Local File Matching**: Word-boundary regex (`\bword\b`) on disk filenames avoids false positives. All query words must match as whole words.
 - **Atomic Persistence**: Queue saves use temp file + `os.replace()` for crash safety.
 - **Command Routing**: Precompiled regex patterns with dynamic admin permission discovery via `@admin_required` decorator.
+- **Channel Whitelist Bootstrap**: On first run, `data/trusted_channels.example.json` (tracked in git) is copied to `data/trusted_channels.json`. This guarantees every clone starts with at least one trusted channel (NCS) — no manual setup needed. The bootstrap runs once: if the runtime file already exists, it is **never** overwritten.
+- **Error Granularity**: Download failures are classified into specific exceptions (`_SongTooLongError`, `_CategoryError`, `_NoValidCandidateError`, `_ChannelNotTrustedError`) and surfaced to chat with actionable messages.
 
 ## Dependencies
 

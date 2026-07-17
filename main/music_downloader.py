@@ -13,9 +13,12 @@ import subprocess
 import threading
 import time
 import random
-from typing import Optional, Dict, Any
+from typing import TYPE_CHECKING, Optional, Dict, Any
 import yt_dlp
 from loguru import logger
+
+if TYPE_CHECKING:
+    from main.admin_handler import AdminHandler
 
 from main.config import (
     DOWNLOAD_DIR,
@@ -41,13 +44,22 @@ class _NoValidCandidateError(Exception):
     """No valid candidate found among search results."""
     pass
 
+class _ChannelNotTrustedError(Exception):
+    """The video's channel is not in the trusted channels whitelist."""
+    pass
+
 
 class MusicDownloader:
     """Class to handle music downloading from YouTube."""
 
-    def __init__(self):
-        """Initializes the MusicDownloader."""
+    def __init__(self, admin_handler: Optional["AdminHandler"] = None):
+        """Initializes the MusicDownloader.
+
+        Args:
+            admin_handler: Optional reference for channel whitelist checks.
+        """
         os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+        self.admin_handler = admin_handler
         self._ydl_opts = self._get_ydl_options()
 
     def _get_ydl_options(self) -> Dict[str, Any]:
@@ -118,6 +130,29 @@ class MusicDownloader:
                 f"The video is in the '{cat_str}' category, not 'Music'. "
                 f"Only songs are accepted."
             )
+
+        # Check channel whitelist (if enabled)
+        from main.config import CHANNEL_WHITELIST_ENABLED
+        if CHANNEL_WHITELIST_ENABLED and self.admin_handler:
+            trusted = self.admin_handler.get_trusted_channels()
+            if not trusted:
+                logger.warning(
+                    "Channel whitelist is ENABLED but the list is EMPTY. "
+                    "No channel will pass validation. Add channels with !trust_channel."
+                )
+            channel_id = info.get("channel_id") or info.get("uploader_id") or ""
+            if not channel_id:
+                channel_display = info.get("channel") or info.get("uploader") or "sconosciuto"
+                return False, (
+                    f"Impossibile identificare il canale '{channel_display}'. "
+                    f"La whitelist canali è attiva ma non ci sono ID disponibili."
+                )
+            if not self.admin_handler.is_trusted_channel(channel_id):
+                channel_display = info.get("channel") or info.get("uploader") or "unknown"
+                return False, (
+                    f"The channel '{channel_display}' is not in the trusted channels whitelist. "
+                    f"Use !trust_channel to add it (admin only)."
+                )
 
         return True, ""
 
@@ -290,6 +325,20 @@ class MusicDownloader:
                            f"Only songs are accepted."
                     )
 
+                all_channel_not_trusted = all(
+                    "not in the trusted channels whitelist" in r for r in rejection_reasons
+                )
+                if all_channel_not_trusted:
+                    logger.error(
+                        f"All {num_tried} results for '{query_or_url}' "
+                        f"come from untrusted channels."
+                    )
+                    raise _ChannelNotTrustedError(
+                        "None of the search results come from a trusted channel. "
+                        "Use !trusted_channels to see authorized channels, "
+                        "or ask an admin to add one with !trust_channel."
+                    )
+
                 # Fallback for mixed reasons: take the first significant reason
                 meaningful = next(
                     (r for r in rejection_reasons if r != "not available"),
@@ -404,6 +453,35 @@ class MusicDownloader:
                 exc_info=True,
             )
             return None
+
+    def resolve_channel_from_query(self, query_or_url: str) -> Optional[Dict[str, str]]:
+        """Risolvi channel_id e nome canale da una query o URL.
+
+        Used by !trust_channel to resolve a channel from a video URL or search query.
+
+        Returns:
+            Dict with {"channel_id": ..., "channel_name": ...} or None.
+        """
+        url = query_or_url
+        if not self._is_url(query_or_url):
+            url = self._search_youtube(query_or_url)
+            if not url:
+                logger.warning(f"No results found for channel query: '{query_or_url}'")
+                return None
+
+        info = self._extract_info(url)
+        if not info:
+            logger.warning(f"Could not extract info from: '{url}'")
+            return None
+
+        channel_id = info.get("channel_id") or info.get("uploader_id")
+        channel_name = info.get("channel") or info.get("uploader") or "Unknown"
+
+        if not channel_id:
+            logger.warning(f"No channel_id found in video info for: '{url}'")
+            return None
+
+        return {"channel_id": channel_id, "channel_name": channel_name}
 
     def get_random_downloaded_file(self) -> Optional[str]:
         """Selects a random audio file from the download folder."""

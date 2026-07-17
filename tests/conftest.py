@@ -88,6 +88,10 @@ def mock_admin_handler():
     handler.remove_blacklist = MagicMock(return_value=True)
     handler.get_blacklist_list = MagicMock(return_value=[])
     handler.is_blacklisted = MagicMock(return_value=False)
+    handler.add_trusted_channel = MagicMock(return_value=True)
+    handler.remove_trusted_channel = MagicMock(return_value=True)
+    handler.is_trusted_channel = MagicMock(return_value=False)
+    handler.get_trusted_channels = MagicMock(return_value={})
     return handler
 
 
@@ -175,6 +179,8 @@ def mock_config():
         "DOWNLOAD_TIMEOUT": 60,
         "MAX_WORKERS": 5,
         "YOUTUBE_CATEGORY": "Music",
+        "CHANNEL_WHITELIST_ENABLED": False,
+        "TRUSTED_CHANNELS_FILE": os.path.join("data", "trusted_channels.json"),
         "LOG_LEVEL": "INFO",
         "LOG_FILE": "test.log",
         "MAX_QUEUE_SIZE": 50,
@@ -187,28 +193,29 @@ def mock_config():
         "PLAYLIST_REMOVE_COMMAND": "rimuovi",
         "PLAYLIST_MOVE_COMMAND": "sposta",
         "PLAYLIST_CLEAR_COMMAND": "svuota",
-        "PLAYLIST_LIST_COMMAND": "lista_playlist",
         "PLAYLIST_POMPA_COMMAND": "pompa",
         "MAX_POMPA_SONGS": 5,
         "ADMIN_BLACKLIST_COMMAND": "blacklist",
         "ADMIN_UNBLACKLIST_COMMAND": "unblacklist",
         "ADMIN_BLACKLIST_LIST_COMMAND": "blacklist_list",
         "ADMIN_SKIP_COMMAND": "skippa",
+        "ADMIN_TRUST_CHANNEL_COMMAND": "trust_channel",
+        "ADMIN_UNTRUST_CHANNEL_COMMAND": "untrust_channel",
+        "ADMIN_TRUSTED_CHANNELS_LIST_COMMAND": "trusted_channels",
         "ADMIN_REMOVE_QUEUE_COMMAND": "rimuovi_coda",
         "ADMIN_CLEAR_QUEUE_COMMAND": "clear_queue",
         "ANALYTICS_STATS_COMMAND": "stats",
         "ANALYTICS_TOP_SONGS_COMMAND": "top_canzoni",
         "ANALYTICS_TOP_USERS_COMMAND": "top_user",
+        "ANALYTICS_STORIA_COMMAND": "history",
         "MUSIC_VOLUME_COMMAND": "volume",
         "MUSIC_PAUSE_COMMAND": "pausa",
         "MUSIC_RESUME_COMMAND": "riprendi",
         "MUSIC_REPEAT_COMMAND": "repeat",
         "MUSIC_REPEAT_OFF_COMMAND": "repeat_off",
-        "MUSIC_REPEAT_INFINITE_COMMAND": "ripeti",
         "MUSIC_NEXT_COMMAND": "next",
         "MUSIC_QUEUE_INFO_COMMAND": "queue_info",
         "MUSIC_DURATION_COMMAND": "duration",
-        "MUSIC_DURATA_COMMAND": "durata",
         "MUSIC_WHEN_COMMAND": "quando",
         "UTILITY_HELP_COMMAND": "help",
         "UTILITY_VERSION_COMMAND": "version",

@@ -4,10 +4,10 @@
 **Last updated**: 2025-07-17
 
 ## Section Overview
-Handles music downloading from YouTube via yt-dlp. Validates songs by duration (max 15 min) and category (Music only). Supports local file matching to avoid unnecessary downloads. Downloads are threaded with postprocessor hooks for reliable path capture.
+Handles music downloading from YouTube via yt-dlp. Validates songs by duration (max 15 min), category (Music only), and optionally by trusted channel whitelist. Supports local file matching to avoid unnecessary downloads. Downloads are threaded with postprocessor hooks for reliable path capture.
 
 ## Files in this Section
-- `main/music_downloader.py` — MusicDownloader class, custom exceptions (_SongTooLongError, _CategoryError, _NoValidCandidateError)
+- `main/music_downloader.py` — MusicDownloader class, custom exceptions (_SongTooLongError, _CategoryError, _NoValidCandidateError, _ChannelNotTrustedError)
 
 ## Data Flow Map
 
@@ -24,6 +24,8 @@ Handles music downloading from YouTube via yt-dlp. Validates songs by duration (
    - `_validate_song(info)` checks:
      - Duration ≤ 900s (15 min) → raises _SongTooLongError if all exceed
      - Category contains "music" → raises _CategoryError if wrong category
+     - Channel in trusted whitelist (if CHANNEL_WHITELIST_ENABLED=true) → raises _ChannelNotTrustedError
+       if ALL candidates come from untrusted channels. Logs warning if whitelist is empty.
    - On first valid candidate: proceed to download
 5. **Disk existence check**: Compare YouTube title with existing files (exact match, not fuzzy)
 6. **Download execution** (threaded):
@@ -48,7 +50,14 @@ Handles music downloading from YouTube via yt-dlp. Validates songs by duration (
 2. YouTube search → extract info via yt-dlp
 3. **Output**: Dict with {title, duration, uploader}
 
+### resolve_channel_from_query(query_or_url) — Channel Resolution
+1. **Input**: YouTube URL or search query
+2. **Process**: If not a URL, search YouTube → extract video info → read channel_id + channel name
+3. **Output**: Dict {"channel_id": str, "channel_name": str} or None
+4. **Used by**: `!trust_channel` admin command
+
 ## Dependencies
 - External: `yt_dlp` (YouTube download/search), `ffprobe` (local duration), `subprocess`, `threading`
 - Internal: Called from `SongRequestBot._process_request()`, command handlers (!duration, !random)
 - Config: DOWNLOAD_DIR, MAX_DURATION_SECONDS, AUDIO_QUALITY, AUDIO_FORMAT, YOUTUBE_CATEGORY, DOWNLOAD_TIMEOUT
+- Channel whitelist: CHANNEL_WHITELIST_ENABLED, TRUSTED_CHANNELS_FILE (requires admin_handler injected)

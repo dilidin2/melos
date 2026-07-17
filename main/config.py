@@ -63,6 +63,11 @@ DOWNLOAD_TIMEOUT: int = 60
 # Filtered category (only "Music")
 YOUTUBE_CATEGORY: str = "Music"
 
+# Channel whitelist: when enabled, only videos from trusted channels are downloaded.
+# Set CHANNEL_WHITELIST_ENABLED=true in .env to activate.
+CHANNEL_WHITELIST_ENABLED: bool = os.getenv("CHANNEL_WHITELIST_ENABLED", "false").lower() == "true"
+TRUSTED_CHANNELS_FILE: str = os.path.join("data", "trusted_channels.json")
+
 # ====================
 # LOGGING CONFIGURATION
 # ====================
@@ -112,6 +117,10 @@ ADMIN_BLACKLIST_COMMAND: str = "blacklist"
 ADMIN_UNBLACKLIST_COMMAND: str = "unblacklist"
 ADMIN_BLACKLIST_LIST_COMMAND: str = "blacklist_list"
 ADMIN_SKIP_COMMAND: str = "skip"
+
+ADMIN_TRUST_CHANNEL_COMMAND: str = "trust_channel"
+ADMIN_UNTRUST_CHANNEL_COMMAND: str = "untrust_channel"
+ADMIN_TRUSTED_CHANNELS_LIST_COMMAND: str = "trusted_channels"
 
 ADMIN_REMOVE_QUEUE_COMMAND: str = "remove_queue"
 ADMIN_CLEAR_QUEUE_COMMAND: str = "clear_queue"

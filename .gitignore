@@ -39,8 +39,10 @@ ENV/
 *.log
 
 # Data directories
-# (contiene queue.json, stats.json, playlist JSON, etc.)
-data/
+# (contiene queue.json, blacklist.json, whitelist.json, playlists/, trusted_channels.json, etc.)
+data/*
+!data/trusted_channels.example.json
+!data/.gitkeep
 
 # Audio files
 *.mp3
