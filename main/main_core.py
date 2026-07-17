@@ -565,6 +565,10 @@ class SongRequestBot:
                                 # repeat_mode == 'off' — normal flow
                                 break
 
+                        # Record random song in analytics
+                        if success and hasattr(self, "analytics"):
+                            self.analytics.record_play("random", song_name)
+
                         self.last_random_song = selected
                     except Exception as e:
                         logger.error(f"Error selecting random song: {e}")

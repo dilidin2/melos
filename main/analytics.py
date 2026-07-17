@@ -39,7 +39,7 @@ class Analytics:
             "total_plays": self._total_plays,
             "songs_by_user": self._songs_by_user,
             "songs_by_title": self._songs_by_title,
-            "play_history": self._play_history[-1000:],  # Keep last 1000
+            "play_history": self._play_history[-5:],  # Keep last 5
         }
 
         with open(self._stats_file, "w", encoding="utf-8") as f:

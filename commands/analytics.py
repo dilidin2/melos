@@ -59,14 +59,14 @@ class AnalyticsCommands:
 
         return "\n".join(lines)
 
-    async def cmd_history(self, username: str, n: int = 10) -> str:
-        """!storia [N] - History of the last N songs played."""
+    async def cmd_history(self, username: str, n: int = 5) -> str:
+        """!storia [N] - History of the last N songs played (hard limit 500 chars)."""
         history = self.analytics.get_play_history(n)
 
         if not history:
             return "📭 No songs played yet. Use !sr <song> to start!"
 
-        lines = [f"🎧 Last {len(history)} songs played:"]
+        song_lines: list[str] = []
         for i, entry in enumerate(reversed(history), 1):
             ts = entry.get("timestamp", "")
             try:
@@ -75,8 +75,11 @@ class AnalyticsCommands:
             except (ValueError, TypeError):
                 time_str = ts
 
-            lines.append(
-                f"  {i}. **{entry['query']}** (@{entry['username']}) — {time_str}"
-            )
+            line = f"  {i}. **{entry['query']}** (@{entry['username']}) — {time_str}"
+            header = f"🎧 Last {len(song_lines) + 1} songs played:"
+            candidate = "\n".join([header] + song_lines + [line])
+            if len(candidate) > 500:
+                break
+            song_lines.append(line)
 
-        return "\n".join(lines)
+        return "\n".join([f"🎧 Last {len(song_lines)} songs played:"] + song_lines)
