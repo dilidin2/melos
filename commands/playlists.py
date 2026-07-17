@@ -39,7 +39,7 @@ class PlaylistCommands:
 
             lines = [f"📋 Your playlists ({len(playlists)}):"]
             for p in playlists:
-                lines.append(f"  • {p.nome} ({len(p.canzoni)} songs)")
+                lines.append(f"  • {p.name} ({len(p.songs)} songs)")
 
             return "\n".join(lines)
         else:
@@ -128,7 +128,7 @@ class PlaylistCommands:
 
         lines = [f"📚 Your playlists ({len(playlists)}):"]
         for p in playlists:
-            lines.append(f"  • {p.nome} ({len(p.canzoni)} songs)")
+            lines.append(f"  • {p.name} ({len(p.songs)} songs)")
 
         return "\n".join(lines)
 
@@ -145,7 +145,7 @@ class PlaylistCommands:
             else:
                 lines = ["🎯 You have multiple playlists. Specify a name:"]
                 for p in playlists:
-                    lines.append(f"  • {p.nome}")
+                    lines.append(f"  • {p.name}")
                 return "\n".join(lines)
 
         songs, error_msg, still_in_queue = self.playlist_manager.pompa_songs(username, playlist_name, n)
@@ -160,8 +160,17 @@ class PlaylistCommands:
             request_id = self.request_queue._request_counter
             self.request_queue._request_counter += 1
             from main.main_core import SongRequest
+
+            # If the song has a known file_path (from !add with local search),
+            # use it directly as the query so download() returns it instantly
+            # without any YouTube or disk search.
+            import os
+            effective_query = song.query
+            if song.file_path != "unknown" and os.path.isfile(song.file_path):
+                effective_query = song.file_path
+
             request = SongRequest(
-                query=song.query,
+                query=effective_query,
                 username=username,
                 channel_id=channel_id,
                 request_id=request_id,

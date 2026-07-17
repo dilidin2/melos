@@ -204,6 +204,15 @@ class MusicDownloader:
             logger.info(f"Local file found, using directly: {query_or_url}")
             return query_or_url
 
+        # Try to find a matching file locally BEFORE any network request.
+        # This is instant (regex word-boundary match on disk) and avoids
+        # the YouTube round-trip for songs already in downloads/.
+        if not self._is_url(query_or_url):
+            local_file = self._find_matching_file(query_or_url)
+            if local_file:
+                logger.info(f"Local fuzzy match found: {local_file}")
+                return local_file
+
         # If it's a direct URL, use only that; if it's a text query
         # retrieve multiple candidates and try in order until one is available.
         # FIX: we use _search_youtube_candidates_with_info to get the info

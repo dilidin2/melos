@@ -49,6 +49,18 @@ class MusicCommands:
         self.audio_player.resume()
         return "▶️ Playback resumed."
 
+    @admin_required
+    async def cmd_volume(self, username: str, level: int) -> str:
+        """!volume <0-100> - Set volume (admin only)."""
+        import pygame
+
+        if level < 0 or level > 100:
+            return "❌ Volume level must be between 0 and 100."
+
+        pygame.mixer.music.set_volume(level / 100.0)
+        logger.info(f"Volume set to {level}% by @{username}")
+        return f"🔊 Volume set to {level}%"
+
     async def cmd_repeat(self, username: str, count: int = 1) -> str:
         """!repeat [number] - Repeats the current song N times.
 

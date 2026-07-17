@@ -79,6 +79,10 @@ class UtilityCommands:
         """!version - Shows bot version."""
         return f"🔧 Twitch Song Request Bot v{self.version}"
 
+    async def cmd_uptime(self, username: str) -> str:
+        """!uptime - Shows bot uptime (fallback when bot._start_time unavailable)."""
+        return "⏱️ Uptime info unavailable."
+
     async def cmd_queue_info(self, username: str, channel_id: str) -> str:
         """!queue_info - Shows the next 5 songs in the queue."""
         if not self.request_queue or not self.music_downloader:

@@ -389,18 +389,15 @@ class SongRequestBot:
                     )
                     return False
 
-            song_info = self.music_downloader.get_song_info(request.query)
-            if song_info:
-                request.resolved_title = song_info.get("title")
-                request.resolved_duration = song_info.get("duration")
-
-            # FIX BUG: after download, get the correct title from the disk
-            # filename. download() tries up to 10 YouTube candidates and if the
-            # first is geo-blocked it picks the second, so the original search
-            # title might not match the song actually played.
+            # Resolve metadata from the file on disk — no network call needed.
+            # download() already searched YouTube (or found a local match),
+            # so calling get_song_info() again would waste time repeating
+            # the same local regex + YouTube search.
             if file_path and os.path.exists(file_path):
                 actual_title = os.path.splitext(os.path.basename(file_path))[0]
                 request.resolved_title = actual_title
+                duration = self.music_downloader._get_local_file_duration(file_path)
+                request.resolved_duration = duration
 
             # Reset votes for the new song
             self.reset_votes()

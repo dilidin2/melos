@@ -245,8 +245,18 @@ class CommandProcessor:
     async def cmd_add(
         self, playlist_name: str, query: str, username: str, channel_id: str
     ):
-        """!add <playlist> - Add current song."""
+        """!add <playlist> <song> - Add song to playlist.
+
+        Searches /downloads/ for a matching file using the same word-boundary
+        regex as MusicDownloader._find_matching_file(). If found, stores the
+        real path so pompa/playback can use it directly without re-searching.
+        """
+        # Try to find a local file matching the query
         file_path = "unknown"
+        if self.services.music_downloader:
+            local_match = self.services.music_downloader._find_matching_file(query)
+            if local_match:
+                file_path = local_match
 
         return await self.services.playlist_commands.cmd_add(
             username, playlist_name, query, file_path, username

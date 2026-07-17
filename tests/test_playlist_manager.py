@@ -56,37 +56,37 @@ class TestPlaylist:
 
     def test_create_playlist(self):
         """Test creating a Playlist."""
-        playlist = Playlist(id="123", nome="Test Playlist")
+        playlist = Playlist(id="123", name="Test Playlist")
         assert playlist.id == "123"
-        assert playlist.nome == "Test Playlist"
-        assert playlist.canzoni == []
-        assert playlist.creata_al is not None
+        assert playlist.name == "Test Playlist"
+        assert playlist.songs == []
+        assert playlist.created_at is not None
 
     def test_to_dict(self):
         """Test converting Playlist to dict."""
         song = PlaylistSong("Song", "/path", "user")
-        playlist = Playlist(id="123", nome="Test", canzoni=[song])
+        playlist = Playlist(id="123", name="Test", songs=[song])
         d = playlist.to_dict()
         assert d["id"] == "123"
-        assert d["nome"] == "Test"
-        assert len(d["canzoni"]) == 1
+        assert d["name"] == "Test"
+        assert len(d["songs"]) == 1
         assert d["recently_pumped_queries"] == []
 
     def test_from_dict(self):
         """Test creating Playlist from dict."""
         data = {
             "id": "123",
-            "nome": "Test",
-            "canzoni": [{"query": "Song", "file_path": "/path", "username_original": "user"}],
-            "creata_al": "2025-01-01",
-            "ultima_modificata": "2025-01-02",
+            "name": "Test",
+            "songs": [{"query": "Song", "file_path": "/path", "username_original": "user"}],
+            "created_at": "2025-01-01",
+            "last_modified": "2025-01-02",
             "recently_pumped_queries": []
         }
         playlist = Playlist.from_dict(data)
         assert playlist.id == "123"
-        assert playlist.nome == "Test"
-        assert len(playlist.canzoni) == 1
-        assert playlist.canzoni[0].query == "Song"
+        assert playlist.name == "Test"
+        assert len(playlist.songs) == 1
+        assert playlist.songs[0].query == "Song"
 
 
 class TestPlaylistManager:
@@ -107,7 +107,7 @@ class TestPlaylistManager:
         """Test creating a playlist."""
         playlist = manager.create_playlist("testuser", "My Playlist")
         assert playlist is not None
-        assert playlist.nome == "My Playlist"
+        assert playlist.name == "My Playlist"
         assert playlist.id is not None
 
     def test_create_duplicate_playlist(self, manager):
@@ -139,7 +139,7 @@ class TestPlaylistManager:
         playlist = manager.create_playlist("testuser", "My Playlist")
         retrieved = manager.get_playlist("testuser", playlist.id)
         assert retrieved is not None
-        assert retrieved.nome == "My Playlist"
+        assert retrieved.name == "My Playlist"
 
     def test_get_playlist_not_found(self, manager):
         """Test getting a non-existent playlist."""
@@ -151,7 +151,7 @@ class TestPlaylistManager:
         manager.create_playlist("testuser", "My Playlist")
         retrieved = manager.get_playlist_by_name("testuser", "My Playlist")
         assert retrieved is not None
-        assert retrieved.nome == "My Playlist"
+        assert retrieved.name == "My Playlist"
 
     def test_get_playlist_by_name_case_insensitive(self, manager):
         """Test getting playlist by name is case insensitive."""
@@ -317,10 +317,10 @@ class TestPlaylistManager:
         test_data = {
             "playlist1": {
                 "id": "123",
-                "nome": "Test Playlist",
-                "canzoni": [],
-                "creata_al": "2025-01-01",
-                "ultima_modificata": "2025-01-01",
+                "name": "Test Playlist",
+                "songs": [],
+                "created_at": "2025-01-01",
+                "last_modified": "2025-01-01",
                 "recently_pumped_queries": []
             }
         }
@@ -329,7 +329,7 @@ class TestPlaylistManager:
         
         playlists = manager.get_user_playlists("testuser")
         assert len(playlists) == 1
-        assert playlists[0].nome == "Test Playlist"
+        assert playlists[0].name == "Test Playlist"
 
     def test_load_invalid_json(self, temp_dir):
         """Test loading invalid JSON file."""

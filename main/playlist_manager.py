@@ -184,7 +184,14 @@ class PlaylistManager:
     def remove_song_from_playlist(
         self, username: str, playlist_name: str, index_or_name: str
     ) -> bool:
-        """Removes a song from a playlist by index or name."""
+        """Removes a song from a playlist by index or name.
+
+        When searching by name, uses word-boundary matching (same logic as
+        MusicDownloader._find_matching_file) to avoid false positives —
+        e.g. "ft" would not match "After Tonight".
+        """
+        import re
+
         playlist = self.get_playlist_by_name(username, playlist_name)
 
         if not playlist:
@@ -202,9 +209,14 @@ class PlaylistManager:
             return False
 
         except ValueError:
-            # Search by name/title
+            # Search by name/title using word-boundary matching
+            search_lower = index_or_name.lower()
+            words = search_lower.split()
+
             for i, song in enumerate(playlist.songs):
-                if index_or_name.lower() in song.query.lower():
+                query_lower = song.query.lower()
+                # Every word must appear as a whole word (word-boundary match)
+                if all(re.search(rf"\b{w}\b", query_lower) for w in words):
                     playlist.songs.pop(i)
                     playlist.last_modified = datetime.now().isoformat()
                     self._save_user_playlists(username)
