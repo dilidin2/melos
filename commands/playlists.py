@@ -119,19 +119,6 @@ class PlaylistCommands:
 
         return "✅ Playlist cleared."
 
-    async def cmd_list_playlists(self, username: str) -> str:
-        """!lista_playlist - Shows all available playlists."""
-        playlists = self.playlist_manager.get_user_playlists(username)
-
-        if not playlists:
-            return "📭 No playlists found."
-
-        lines = [f"📚 Your playlists ({len(playlists)}):"]
-        for p in playlists:
-            lines.append(f"  • {p.name} ({len(p.songs)} songs)")
-
-        return "\n".join(lines)
-
     async def cmd_pump(self, username: str, playlist_name: Optional[str], n: int, channel_id: str) -> str:
         """!pompa [playlist] [n] - Pumps N random songs from a playlist."""
         if playlist_name is None:

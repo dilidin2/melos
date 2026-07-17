@@ -16,7 +16,6 @@ from main.config import (
     PLAYLIST_REMOVE_COMMAND,
     PLAYLIST_MOVE_COMMAND,
     PLAYLIST_CLEAR_COMMAND,
-    PLAYLIST_LIST_COMMAND,
     PLAYLIST_POMPA_COMMAND,
     ADMIN_BLACKLIST_COMMAND,
     ADMIN_UNBLACKLIST_COMMAND,
@@ -33,11 +32,9 @@ from main.config import (
     MUSIC_RESUME_COMMAND,
     MUSIC_REPEAT_COMMAND,
     MUSIC_REPEAT_OFF_COMMAND,
-    MUSIC_REPEAT_STOP_COMMAND,
     MUSIC_NEXT_COMMAND,
     MUSIC_QUEUE_INFO_COMMAND,
     MUSIC_DURATION_COMMAND,
-    MUSIC_DURATA_COMMAND,
     MUSIC_WHEN_COMMAND,
     MUSIC_RANDOM_COMMAND,
     MUSIC_OPS_COMMAND,
@@ -76,7 +73,6 @@ class CommandProcessor:
         p_remove = re.escape(PLAYLIST_REMOVE_COMMAND)
         p_move = re.escape(PLAYLIST_MOVE_COMMAND)
         p_clear = re.escape(PLAYLIST_CLEAR_COMMAND)
-        p_list = re.escape(PLAYLIST_LIST_COMMAND)
         p_pompa = re.escape(PLAYLIST_POMPA_COMMAND)
         a_blacklist = re.escape(ADMIN_BLACKLIST_COMMAND)
         a_unblacklist = re.escape(ADMIN_UNBLACKLIST_COMMAND)
@@ -94,11 +90,9 @@ class CommandProcessor:
         mus_resume = re.escape(MUSIC_RESUME_COMMAND)
         mus_repeat = re.escape(MUSIC_REPEAT_COMMAND)
         mus_repeat_off = re.escape(MUSIC_REPEAT_OFF_COMMAND)
-        mus_repeat_stop = re.escape(MUSIC_REPEAT_STOP_COMMAND)
         mus_next = re.escape(MUSIC_NEXT_COMMAND)
         mus_queue_info = re.escape(MUSIC_QUEUE_INFO_COMMAND)
         mus_duration = re.escape(MUSIC_DURATION_COMMAND)
-        mus_durata = re.escape(MUSIC_DURATA_COMMAND)
         mus_when = re.escape(MUSIC_WHEN_COMMAND)
         mus_random = re.escape(MUSIC_RANDOM_COMMAND)
         mus_ops = re.escape(MUSIC_OPS_COMMAND)
@@ -115,7 +109,6 @@ class CommandProcessor:
             rf"{prefix}{p_remove}\s+(\w+)\s+(.+)$": "cmd_remove",
             rf"{prefix}{p_move}\s+(\w+)\s+(\d+)\s+(\d+)$": "cmd_move",
             rf"{prefix}{p_clear}\s+(\w+)$": "cmd_clear",
-            rf"{prefix}{p_list}": "cmd_list_playlists",
             rf"{prefix}{p_pompa}(?:\s+(\w+)(?:\s+(\d+))?)?$": "cmd_pump",
             rf"{prefix}{a_blacklist}\s+(\w+)$": "cmd_blacklist",
             rf"{prefix}{a_unblacklist}\s+(\w+)$": "cmd_unblacklist",
@@ -132,11 +125,9 @@ class CommandProcessor:
             rf"{prefix}{mus_resume}$": "cmd_resume",
             rf"{prefix}{mus_repeat}(?:\s+(\d+))?$": "cmd_repeat",
             rf"{prefix}{mus_repeat_off}$": "cmd_repeat_off",
-            rf"{prefix}{mus_repeat_stop}$": "cmd_stop_repeat",
            rf"{prefix}{mus_next}$": "cmd_next",
             rf"{prefix}{mus_queue_info}$": "cmd_queue_info",
             rf"{prefix}{mus_duration}\s+(.+)$": "cmd_duration",
-            rf"{prefix}{mus_durata}\s+(\d+)$": "cmd_at",
             rf"{prefix}{mus_when}$": "cmd_when",
             rf"{prefix}{mus_random}(?:\s+(\d+))?$": "cmd_random",
             rf"{prefix}{mus_ops}$": "cmd_ops",
@@ -282,10 +273,6 @@ class CommandProcessor:
         """!clear <playlist> - Clear playlist."""
         return await self.services.playlist_commands.cmd_clear(username, playlist_name)
 
-    async def cmd_list_playlists(self, username: str, channel_id: str):
-        """!list_playlists - Show all playlists."""
-        return await self.services.playlist_commands.cmd_list_playlists(username)
-
     async def cmd_pump(
         self, playlist_name: Optional[str], n_str: Optional[str], username: str, channel_id: str
     ):
@@ -388,10 +375,6 @@ class CommandProcessor:
         level = int(level)
         return await self.services.music_commands.cmd_volume(username, level)
 
-    async def cmd_stop_repeat(self, username: str, channel_id: str):
-        """!stop_repeat - Stop repeat."""
-        return await self.services.music_commands.cmd_stop_repeat(username)
-
     async def cmd_next(self, username: str, channel_id: str):
         """!next - Next song."""
         return await self.services.music_commands.cmd_next(username)
@@ -403,10 +386,6 @@ class CommandProcessor:
     async def cmd_duration(self, query: str, username: str, channel_id: str):
         """!duration <song> - Song duration."""
         return await self.services.music_commands.cmd_duration(username, query)
-
-    async def cmd_at(self, position: str, username: str, channel_id: str):
-        """!at <N> - Duration of song at position N in queue."""
-        return await self.services.music_commands.cmd_at(position, username, channel_id)
 
     async def cmd_when(self, username: str, channel_id: str):
         """!when - Estimate when your next song will play."""

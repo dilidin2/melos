@@ -135,7 +135,6 @@ class TwitchHandler:
             self.chat.register_command("remove", self._handle_other_command)
             self.chat.register_command("move", self._handle_other_command)
             self.chat.register_command("clear", self._handle_other_command)
-            self.chat.register_command("list_playlists", self._handle_other_command)
             self.chat.register_command("pump", self._handle_other_command)
             # Admin commands
             self.chat.register_command("blacklist", self._handle_other_command)

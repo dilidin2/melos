@@ -26,9 +26,9 @@ class UtilityCommands:
         """!help [command] - Shows help."""
         if not command:
             return [
-                """📚 1/3 [MUSIC]: !sr <url/title> • !random [N] • !duration <song> • !at <N> • !when | [PLAYLIST]: !create <name> • !playlist [n] • !add <pl> <song> • !remove <pl> <pos> • !move <pl> <p1> <p2> • !clear <pl> • !list_playlists • !pump <pl> [N]""",
+                """📚 1/3 [MUSIC]: !sr <url/title> • !random [N] • !duration <song> • !when | [PLAYLIST]: !create <name> • !playlist [n] • !add <pl> <song> • !remove <pl> <pos> • !move <pl> <p1> <p2> • !clear <pl> • !pump <pl> [N]""", cant_remove_0
                 """📚 2/3 [MOD]: !blacklist/!unblacklist <user> • !blacklist_list • !skip • !remove_queue <pos> • !clear_queue • !volume <0-100> | [STATS]: !stats • !top_songs [N] • !top_users [N] • !history_played [N]""",
-                """📚 3/3 [CTRL]: !pause/!resume • !repeat/!repeat_off • !repeat/!stop_repeat • !next • !queue_info • !ops | [UTIL]: !help [cmd] • !version • !uptime""",
+                """📚 3/3 [CTRL]: !pause/!resume • !repeat/!repeat_off • !next • !queue_info • !ops | [UTIL]: !help [cmd] • !version • !uptime""",
             ]
 
         else:
@@ -40,7 +40,6 @@ class UtilityCommands:
                 "remove": "!remove <playlist> <position> - Remove song from playlist",
                 "move": "!move <playlist> <pos1> <pos2> - Swap songs in playlist",
                 "clear": "!clear <playlist> - Clear a playlist",
-                "list_playlists": "!list_playlists - Show all playlists",
                 "pump": "!pump <playlist> [N] - Pump N random songs from playlist",
                 "blacklist": "!blacklist <user> - Add to blacklist (admin)",
                 "unblacklist": "!unblacklist <user> - Remove from blacklist (admin)",
@@ -58,10 +57,8 @@ class UtilityCommands:
                 "resume": "!resume - Resume playback from pause",
                 "repeat": "!repeat [N] - Set repeat (default 1)",
                 "repeat_off": "!repeat_off - Disable repeat",
-                "stop_repeat": "!stop_repeat - Stop repeat",
                 "next": "!next - Next song",
                 "duration": "!duration <song> - Show song duration",
-                "at": "!at <N> - Show duration of song at position N in queue",
                 "when": "!when - Estimate when your next song will play",
                 "random": "!random [N] - Play N random songs from library",
                 "help": "!help [command] - Show help",

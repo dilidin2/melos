@@ -90,25 +90,15 @@ class MusicCommands:
             return "🔁 Repeat mode disabled"
         return f"🔁 Repeat enabled ({count} times)"
 
+    @admin_required
     async def cmd_repeat_off(self, username: str) -> str:
-        """!repeat_off - Disables repeat."""
+        """!repeat_off - Disables repeat (admin only)."""
         if self._bot and hasattr(self._bot, 'repeat_mode'):
             self._bot.repeat_mode = 'off'
             self._bot.repeat_remaining = 0
+            logger.info(f"Repeat disabled by @{username}")
             return "🔁 Repeat mode disabled"
         return "🔁 Repeat mode disabled"
-
-    async def cmd_stop_repeat(self, username: str) -> str:
-        """!stop_repeat - Stops repeat and returns to normal flow.
-
-        Disables current repeat and lets the bot proceed
-        with the queue normally.
-        """
-        if self._bot and hasattr(self._bot, 'repeat_mode'):
-            self._bot.repeat_mode = 'off'
-            logger.info(f"Repeat disabled by @{username}")
-
-        return "🔁 Repeat disabled"
 
     async def cmd_next(self, username: str) -> str:
         """!next - Shows the next song in the queue."""
@@ -199,41 +189,6 @@ class MusicCommands:
             return f"⏱️ **{title}**: {duration_str}"
         else:
             return f"⏱️ Duration of '{query}': not found in local database"
-
-    async def cmd_at(self, position_str: str, username: str, channel_id: str) -> str:
-        """!durata <N> - Shows duration of song at position N in the queue."""
-        try:
-            position = int(position_str)
-        except ValueError:
-            return "❌ Use !durata <number> (e.g.: !durata 3)"
-
-        if position < 1:
-            return "❌ Position must be a positive number (minimum 1)."
-
-        if not self._request_queue or not self._music_downloader:
-            return "❌ Unable to access the queue."
-
-        items = self._request_queue.get_items(count=position)
-        if len(items) < position:
-            return f"❌ The queue only has {len(items)} songs. Use a smaller or equal number."
-
-        request = items[position - 1]  # 1-based
-        song_info = self._music_downloader.get_song_info(request.query)
-
-        if song_info:
-            duration_seconds = song_info.get("duration", 0)
-            if duration_seconds > 0:
-                minutes = duration_seconds // 60
-                seconds = duration_seconds % 60
-                duration_str = f"{minutes}:{seconds:02d}"
-            else:
-                duration_str = "N/D"
-            title = song_info.get("title", request.query)
-        else:
-            title = request.query
-            duration_str = "N/D"
-
-        return f"⏱️ Song #{position}: **'{title}'** - Duration: {duration_str}"
 
     async def cmd_when(self, username: str, channel_id: str) -> str:
         """!quando - Estimates when your next song will play in the queue."""
