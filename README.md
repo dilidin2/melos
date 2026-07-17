@@ -85,7 +85,6 @@ The bot will connect to your Twitch channel and start listening for commands. Pr
 | `!random [N]` | Play N random songs from library |
 | `!vote` | Vote to skip the current song (needs 3 different users) |
 | `!duration <song>` | Show song duration |
-| `!at <N>` | Show duration of song at position N in queue |
 | `!when` | Estimate when your next song will play |
 | `!next` | Show the next song in the queue |
 | `!queue_info` | Show queue stats (count, estimated duration, repeat status) |
@@ -111,7 +110,6 @@ The bot will connect to your Twitch channel and start listening for commands. Pr
 | `!remove <playlist> <pos/name>` | Remove a song by position or name |
 | `!move <playlist> <p1> <p2>` | Swap two songs in a playlist |
 | `!clear <playlist>` | Clear all songs from a playlist |
-| `!list_playlists` | List all your playlists |
 | `!pump <playlist> [N]` | Queue N random songs from a playlist (sliding window) |
 
 ### Admin Commands
