@@ -491,7 +491,18 @@ class MusicDownloader:
                     continue
 
                 name_without_ext = os.path.splitext(filename)[0].lower()
-                words = query_lower.split()
+
+                # Split query into words and strip non-alphanumeric chars from each.
+                # This handles parentheses, brackets, etc. (e.g. "tesla (slowed electro mix)"
+                # → ["tesla", "slowed", "electro", "mix"]).  Without this, raw chars like
+                # '(' would create an invalid regex pattern (PatternError).
+                words = [re.sub(r'[^a-z0-9]', '', w) for w in query_lower.split()]
+                words = [w for w in words if w]  # drop empty strings
+
+                # Guard against empty word list (e.g. query "???" or "-- --"):
+                # without this, matched_words == 0 == len(words) → match-all.
+                if not words:
+                    return None
 
                 # Every word must appear as a whole word (word-boundary match)
                 matched_words = sum(
