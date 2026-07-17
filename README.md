@@ -10,13 +10,14 @@ A Twitch chat bot for requesting and playing music directly in your stream via c
 - 📻 **YouTube Music Downloading** — Downloads music from YouTube (Music category only, max 15 min)
 - 🔊 **Audio Playback** — Plays songs in real-time using Pygame
 - 🗳️ **Democratic Skip** — 3 different users can vote `!vote` to skip the current song
-- 📋 **Persistent Queue** — Queue survives bot restarts (saved to JSON)
+- 📋 **Persistent Queue** — Queue survives bot restarts (saved to JSON with atomic writes)
 - 🎲 **Random Playback** — Plays random songs from your downloads folder when the queue is empty
 - 📊 **Analytics** — Tracks requests, plays, top songs, and top users
-- 📁 **Playlists** — Create and manage custom playlists
-- 👑 **Admin Commands** — Blacklist users, manage queue, skip songs
+- 📁 **Playlists** — Create and manage custom playlists with `!pump` for random batch queuing
+- 👑 **Admin Commands** — Blacklist users, manage queue, skip songs, control volume
 - 🔁 **Repeat Modes** — Off, count-based, or infinite repeat
-- 🏷️ **Duplicate Detection** — Avoids re-downloading the same song
+- 💾 **Local File Matching** — Word-boundary matching on disk avoids re-downloading known songs
+- 🏷️ **Duplicate Detection** — LRU cache (100 entries) prevents redundant downloads
 
 ## Installation
 
@@ -48,6 +49,10 @@ TWITCH_CLIENT_ID=your_client_id
 TWITCH_CLIENT_SECRET=your_client_secret
 TARGET_CHANNEL=your_twitch_channel
 OAUTH_REDIRECT_URI=http://localhost:17563
+ADMIN_USERS=admin1,admin2
+LOG_LEVEL=INFO
+LOG_FILE=twitch_sr.log
+DOWNLOAD_DIR=./downloads
 ```
 
 To get your credentials:
@@ -68,97 +73,153 @@ To get your credentials:
 python run.py
 ```
 
-The bot will connect to your Twitch channel and start listening for commands.
+The bot will connect to your Twitch channel and start listening for commands. Press `Ctrl+C` for a graceful shutdown (drains queue, persists state).
 
 ## Commands
 
+### Music Requests & Playback
+
 | Command | Description |
 |---------|-------------|
-| `!sr <query>` | Request a song |
-| `!vote` | Vote to skip the current song (needs 3 different users) |
+| `!sr <query>` | Request a song (title or YouTube URL) |
 | `!random [N]` | Play N random songs from library |
+| `!vote` | Vote to skip the current song (needs 3 different users) |
 | `!duration <song>` | Show song duration |
-| `!durata <N>` | Show duration of song at position N in queue |
-| `!quando` | Estimate when your song will play |
-| `!help [cmd]` | Show help |
-| `!volume <0-100>` | Set volume |
-| `!pausa` | Pause playback |
-| `!riprendi` | Resume playback |
-| `!repeat [N]` | Enable repeat mode |
-| `!repeat_off` | Disable repeat |
-| `!ripeti [N]` | Repeat song (N=1 or infinite) |
-| `!stop_ripeti` | Stop repeat |
-| `!next` | Next song |
-| `!queue_info` | Show current queue |
-| `!stats` | View analytics |
-| `!top_canzoni [N]` | Show top requested songs |
-| `!top_user [N]` | Show top requesting users |
-| `!storia [N]` | Play history of last N songs |
-| `!playlist <name>` | View a playlist |
-| `!crea <name>` | Create a playlist |
-| `!aggiungi <playlist> <song>` | Add song to playlist |
-| `!rimuovi <playlist> <index>` | Remove song from playlist |
-| `!sposta <playlist> <p1> <p2>` | Swap songs in playlist |
-| `!svuota <playlist>` | Clear a playlist |
-| `!lista_playlist` | List all playlists |
-| `!pompa <playlist> [N]` | Pump N random songs from playlist |
-| `!blacklist <user>` | Blacklist a user (admin) |
-| `!unblacklist <user>` | Remove from blacklist (admin) |
-| `!blacklist_list` | Show blacklist (admin) |
-| `!skippa` / `!skip` | Skip current song (admin) |
-| `!rimuovi_coda <pos>` | Remove from queue (admin) |
-| `!coda_info` | Queue info (admin) |
-| `!clear_queue` | Clear the queue (admin) |
-| `!version` | Show bot version |
-| `!uptime` | Show bot uptime |
+| `!at <N>` | Show duration of song at position N in queue |
+| `!when` | Estimate when your next song will play |
+| `!next` | Show the next song in the queue |
+| `!queue_info` | Show queue stats (count, estimated duration, repeat status) |
+| `!ops` | Remove the last song you added from the queue |
 
-## Project Structure
+### Playback Control (Admin)
+
+| Command | Description |
+|---------|-------------|
+| `!volume <0-100>` | Set volume level |
+| `!pause` | Pause playback |
+| `!resume` | Resume playback |
+| `!repeat [N]` | Repeat current song N times (no arg = infinite) |
+| `!repeat_off` | Disable repeat mode |
+| `!stop_repeat` | Stop repeat and return to normal queue flow |
+
+### Playlists
+
+| Command | Description |
+|---------|-------------|
+| `!create <name>` | Create a new playlist |
+| `!playlist [name] [page]` | List your playlists or show songs in one |
+| `!add <playlist> <song>` | Add a song to a playlist (matches local files) |
+| `!remove <playlist> <pos/name>` | Remove a song by position or name |
+| `!move <playlist> <p1> <p2>` | Swap two songs in a playlist |
+| `!clear <playlist>` | Clear all songs from a playlist |
+| `!list_playlists` | List all your playlists |
+| `!pump <playlist> [N]` | Queue N random songs from a playlist (sliding window) |
+
+### Admin Commands
+
+| Command | Description |
+|---------|-------------|
+| `!blacklist <user>` | Blacklist a user (blocks song requests) |
+| `!unblacklist <user>` | Remove a user from blacklist |
+| `!blacklist_list` | Show all blacklisted users |
+| `!skip` | Skip the current song |
+| `!remove_queue <pos>` | Remove a specific position from the queue |
+| `!clear_queue` | Clear the entire queue |
+
+Admin users are configured via the `ADMIN_USERS` environment variable (comma-separated usernames).
+
+### Analytics
+
+| Command | Description |
+|---------|-------------|
+| `!stats` | Show general bot statistics (total, today, this week) |
+| `!top_songs [N]` | Show top N most requested songs |
+| `!top_users [N]` | Show top N most active users |
+| `!history [N]` | Show last N songs played |
+
+### Utility
+
+| Command | Description |
+|---------|-------------|
+| `!help [cmd]` | Show help or details for a specific command |
+| `!version` | Show bot version |
+| `!uptime` | Show how long the bot has been running |
+
+## Architecture
 
 ```
 melos/
-├── run.py                  # Main entry point
-├── main/                   # Core bot logic
-│   ├── main_core.py        # SongRequestBot, queue, duplicate cache
-│   ├── twitch_handler.py   # Twitch chat connection
-│   ├── music_downloader.py # YouTube downloading (yt-dlp)
-│   ├── audio_player.py     # Audio playback (Pygame)
-│   ├── config.py           # Configuration
-│   ├── services.py         # Dependency injection container
-│   ├── playlist_manager.py # Playlist management
-│   ├── analytics.py        # Statistics tracking
-│   ├── admin_handler.py    # Admin permissions
-│   ├── chat_message.py     # Chat message utilities
-│   ├── command_processor.py # Command routing
-│   └── queue_persistence.py # Queue save/load
-├── commands/               # Command handlers
-│   ├── music.py            # Music commands
-│   ├── playlists.py        # Playlist commands
-│   ├── admin.py            # Admin commands
-│   ├── analytics.py        # Analytics commands
-│   └── utility.py          # Utility commands
-├── utils/                  # Utilities
-│   └── logger.py           # Logging setup
-├── data/                   # Persistent data
-│   ├── queue.json          # Request queue
-│   ├── stats.json          # Analytics data
-│   └── playlists/          # Playlist files
-├── downloads/              # Downloaded audio files
-├── tests/                  # Test suite
-├── pyproject.toml          # Project configuration
-└── .env                    # Environment variables
+├── run.py                              # Entry point — wires all services, starts bot
+├── main/                               # Core bot logic and services
+│   ├── config.py                       # All configuration (Twitch, audio, queue, commands)
+│   ├── main_core.py                    # SongRequestBot, RequestQueue, DuplicateCache
+│   ├── twitch_handler.py               # Twitch IRC connection + OAuth flow
+│   ├── chat_message.py                 # Chat message formatting utilities
+│   ├── music_downloader.py             # YouTube download (yt-dlp), local file matching
+│   ├── audio_player.py                 # Pygame mixer playback
+│   ├── playlist_manager.py             # User playlist CRUD + pompa feature
+│   ├── admin_handler.py                # Blacklist/whitelist management
+│   ├── analytics.py                    # Request/play tracking + statistics
+│   ├── command_processor.py            # Regex command router + permission checks
+│   ├── services.py                     # DI container (CommandServices dataclass)
+│   └── queue_persistence.py            # Atomic JSON save/load for the queue
+├── commands/                           # Command handler classes (one per domain)
+│   ├── music.py                        # Playback control commands
+│   ├── playlists.py                    # Playlist management commands
+│   ├── admin.py                        # Admin/moderation commands
+│   ├── analytics.py                    # Statistics commands
+│   └── utility.py                      # Help, version, uptime, queue_info
+├── utils/                              # Shared utilities
+│   └── logger.py                       # Loguru setup (console + file with rotation)
+├── data/                               # Persistent data (gitignored)
+│   ├── queue.json                      # Persisted request queue
+│   ├── blacklist.json                  # Blacklisted users
+│   ├── stats.json                      # Analytics data
+│   └── playlists/                      # Per-user playlist files
+├── downloads/                          # Downloaded audio files (gitignored)
+├── tests/                              # Pytest test suite (~20 modules)
+├── AGENT/                              # Project index for AI agents (tracked in git)
+│   ├── PI.md                           # Root index with tree + section navigation
+│   └── sections/                       # One .md per logical section with data flows
+├── pyproject.toml                      # Project metadata, dependencies, tool configs
+├── .env                                # Environment variables (gitignored)
+└── tokens.json                         # Cached Twitch OAuth tokens (gitignored)
 ```
+
+## Key Design Decisions
+
+- **Dependency Injection**: All services are wired explicitly via `CommandServices` dataclass in `run.py`. No global state or implicit coupling.
+- **Thread Safety**: `RequestQueue` uses asyncio.Lock for logical race protection at await boundaries. Audio playback runs in a `ThreadPoolExecutor` to avoid blocking the event loop.
+- **Local File Matching**: Word-boundary regex (`\bword\b`) on disk filenames avoids false positives. All query words must match as whole words.
+- **Atomic Persistence**: Queue saves use temp file + `os.replace()` for crash safety.
+- **Command Routing**: Precompiled regex patterns with dynamic admin permission discovery via `@admin_required` decorator.
 
 ## Dependencies
 
 | Package | Purpose |
 |---------|---------|
-| twitchAPI | Twitch chat integration |
-| yt-dlp | YouTube music downloading |
-| pygame | Audio playback |
-| soundfile | Audio file reading |
-| numpy | Audio processing |
-| python-dotenv | Environment variable loading |
-| loguru | Logging |
+| twitchAPI | Twitch IRC chat integration (auth, messaging, commands) |
+| yt-dlp | YouTube music downloading + metadata extraction |
+| pygame | Audio playback (mixer module) |
+| python-dotenv | Environment variable loading from `.env` |
+| loguru | Structured logging with rotation and compression |
+
+## Development
+
+### Running Tests
+
+```bash
+python -m pytest              # Run all tests
+python -m pytest -v           # Verbose output
+python -m pytest -k "queue"   # Keyword filter
+python -m pytest -m "not slow"  # Exclude slow tests
+```
+
+Test markers: `slow`, `integration`, `unit`. Pytest config in `pyproject.toml` (asyncio_mode: auto).
+
+### Code Quality
+
+Ruff is configured in `pyproject.toml` (target: py310, line length: 100, rules: E, F, I, W).
 
 ## License
 

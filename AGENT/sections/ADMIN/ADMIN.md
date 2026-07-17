@@ -1,32 +1,38 @@
 # ADMIN - Data Flow Documentation
 
-**Commit**: `f2f4f10 fix: make !repeat_off actually disable repeat mode`
-**Last updated**: 2026-07-15
+**Commit**: `8fdc2aa feat: improve local file matching, volume command, playlist fixes`
+**Last updated**: 2025-07-17
 
 ## Section Overview
-User moderation (blacklist/whitelist) and admin-only commands with permission enforcement.
+User moderation (blacklist/whitelist) and admin command handlers. Blacklisted users are blocked from requesting songs (checked in SongRequestBot._handle_song_request). Admin commands require the user to be in ADMIN_USERS config list, enforced by `@admin_required` decorator + CommandProcessor permission check.
 
 ## Files in this Section
-- `main/admin_handler.py` - Blacklist/whitelist persistence
-- `commands/admin.py` - Admin command handlers
+- `main/admin_handler.py` — AdminHandler: blacklist/whitelist CRUD with JSON persistence
+- `commands/admin.py` — AdminCommands: !blacklist, !unblacklist, !blacklist_list, !skip, !remove_queue, !clear_queue, !volume
 
-## Data Flow Map for Each File
+## Data Flow Map
 
-### admin_handler.py
-1. **Input**: Username to add/remove from blacklist or whitelist
-2. **Transformation**:
-   - Loads from `data/blacklist.json` and `data/whitelist.json` on init
-   - Case-insensitive matching (stores lowercase)
-   - Saves immediately after each mutation
-3. **Output**: Boolean success, list of blacklisted/whitelisted users
-4. **Error Handling**: Corrupt JSON files silently reset; missing files treated as empty
+### AdminHandler — Blacklist/Whitelist Management
+1. **Init**: Load `data/blacklist.json` and `data/whitelist.json` → parse to sets
+2. **add_blacklist(username)**: Add lowercase username to set → save JSON
+3. **remove_blacklist(username)**: Remove from set → save JSON
+4. **is_blacklisted(username)**: Case-insensitive lookup in set
+5. **get_blacklist_list()**: Return list of blacklisted usernames
+6. **Persistence**: Atomic JSON write on every mutation
 
-### commands/admin.py
-1. **Input**: Command parameters from `CommandProcessor`
-2. **Transformation**: All methods decorated with `@admin_required` — permission checked in `CommandProcessor._build_admin_set()` at runtime
-3. **Output**: Response strings for chat
-4. **Key methods**: `cmd_blacklist`, `cmd_unblacklist`, `cmd_blacklist_list`, `cmd_skip`, `cmd_remove_queue`, `cmd_clear_queue`
+### Blacklist Enforcement (in SongRequestBot)
+1. On `!sr <query>`: Check `admin_handler.is_blacklisted(username)` → reject with message if blacklisted
+2. Whitelist is loaded but NOT enforced in current code (placeholder for future use)
+
+### Admin Commands (commands/admin.py)
+- **cmd_blacklist/unblacklist**: Delegate to AdminHandler → return status message
+- **cmd_blacklist_list**: Get list from AdminHandler → format as bullet list
+- **cmd_skip**: Call `audio_player.stop()` → trigger next song in queue processor
+- **cmd_remove_queue**: `request_queue.remove_by_index(pos - 1)` → persist queue
+- **cmd_clear_queue**: `request_queue.clear()` → persist queue
+- **cmd_volume**: `pygame.mixer.music.set_volume(level / 100.0)`
 
 ## Dependencies
-- External: `json` (stdlib)
-- Internal: Depends on `AdminHandler`, `AudioPlayer`, `RequestQueue`; permission decorator checked by `CommandProcessor`
+- External: `json`, `pathlib`
+- Internal: Called from SongRequestBot (blacklist check), CommandProcessor (admin commands)
+- Data files: `data/blacklist.json`, `data/whitelist.json`
