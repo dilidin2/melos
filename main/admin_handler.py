@@ -66,7 +66,7 @@ class AdminHandler:
         if not tc_file.exists() and example_file.exists():
             shutil.copy2(str(example_file), str(tc_file))
             logger.info(
-                "Nessuna whitelist canali trovata, uso il file di esempio come base"
+                "No trusted channels whitelist found, using example file as seed"
             )
 
         if tc_file.exists():

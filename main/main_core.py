@@ -162,7 +162,7 @@ class SongRequestBot:
 
     def __init__(self, audio_device=None, admin_handler=None):
         """Initializes the bot."""
-        self.music_downloader = MusicDownloader()
+        self.music_downloader = MusicDownloader(admin_handler=admin_handler)
         self.audio_player = AudioPlayer(device_name=audio_device)
         self.twitch_handler = TwitchHandler()
         self.chat_message = ChatMessage(self.twitch_handler)

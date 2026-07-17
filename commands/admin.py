@@ -188,16 +188,16 @@ class AdminCommands:
         result = resolver.resolve_channel_from_query(query_or_url)
         if not result:
             return (
-                f"❌ Canale non trovato per '{query_or_url}'. "
-                f"Prova con un URL video YouTube o il nome del canale."
+                f"❌ Channel not found for '{query_or_url}'. "
+                f"Try with a YouTube video URL or the channel name."
             )
 
         channel_id = result["channel_id"]
         channel_name = result["channel_name"]
 
         if self.admin_handler.add_trusted_channel(channel_id, channel_name):
-            return f"✅ Canale **{channel_name}** ({channel_id}) aggiunto alla whitelist."
-        return f"ℹ️ Il canale **{channel_name}** è già nella whitelist."
+            return f"✅ Channel **{channel_name}** ({channel_id}) added to the trusted channels whitelist."
+        return f"ℹ️ Channel **{channel_name}** is already in the trusted channels whitelist."
 
     @admin_required
     async def cmd_untrust_channel(self, username: str, channel_id: str) -> str:
@@ -210,8 +210,8 @@ class AdminCommands:
         channel_name = channels_before.get(channel_id, channel_id)
 
         if self.admin_handler.remove_trusted_channel(channel_id):
-            return f"✅ Canale **{channel_name}** ({channel_id}) rimosso dalla whitelist."
-        return f"❌ Il canale `{channel_id}` non era nella whitelist."
+            return f"✅ Channel **{channel_name}** ({channel_id}) removed from the trusted channels whitelist."
+        return f"❌ Channel `{channel_id}` was not in the trusted channels whitelist."
 
     @admin_required
     async def cmd_trusted_channels_list(self, username: str) -> str:
@@ -222,9 +222,9 @@ class AdminCommands:
         channels = self.admin_handler.get_trusted_channels()
 
         if not channels:
-            return "📭 Nessun canale nella whitelist dei canali fidati."
+            return "📭 No trusted channels in the whitelist."
 
-        lines = [f"🛡️ Canali fidati ({len(channels)}):"]
+        lines = [f"🛡️ Trusted channels ({len(channels)}):"]
         for channel_id, name in channels.items():
             lines.append(f"  • {name} (`{channel_id}`)")
 

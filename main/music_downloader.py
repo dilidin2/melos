@@ -142,10 +142,10 @@ class MusicDownloader:
                 )
             channel_id = info.get("channel_id") or info.get("uploader_id") or ""
             if not channel_id:
-                channel_display = info.get("channel") or info.get("uploader") or "sconosciuto"
+                channel_display = info.get("channel") or info.get("uploader") or "unknown"
                 return False, (
-                    f"Impossibile identificare il canale '{channel_display}'. "
-                    f"La whitelist canali è attiva ma non ci sono ID disponibili."
+                    f"Unable to identify the channel '{channel_display}'. "
+                    f"Channel whitelist is active but no channel ID is available."
                 )
             if not self.admin_handler.is_trusted_channel(channel_id):
                 channel_display = info.get("channel") or info.get("uploader") or "unknown"
@@ -455,7 +455,7 @@ class MusicDownloader:
             return None
 
     def resolve_channel_from_query(self, query_or_url: str) -> Optional[Dict[str, str]]:
-        """Risolvi channel_id e nome canale da una query o URL.
+        """Resolve channel_id and channel name from a query or URL.
 
         Used by !trust_channel to resolve a channel from a video URL or search query.
 
