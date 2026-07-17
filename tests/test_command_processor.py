@@ -203,14 +203,6 @@ class TestCommandProcessor:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_process_stop_ripeti_command(self, processor, mock_command_services):
-        """Test processing !stop_ripeti command."""
-        mock_command_services.music_commands.cmd_stop_repeat = AsyncMock(return_value="Repeat stopped")
-        
-        result = await processor.process("!stop_ripeti", "user", "ch")
-        assert result is True
-
-    @pytest.mark.asyncio
     async def test_process_next_command(self, processor, mock_command_services):
         """Test processing !next command."""
         mock_command_services.music_commands.cmd_next = AsyncMock(return_value="Next")

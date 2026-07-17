@@ -99,8 +99,7 @@ The bot will connect to your Twitch channel and start listening for commands. Pr
 | `!pause` | Pause playback |
 | `!resume` | Resume playback |
 | `!repeat [N]` | Repeat current song N times (no arg = infinite) |
-| `!repeat_off` | Disable repeat mode |
-| `!stop_repeat` | Stop repeat and return to normal queue flow |
+| `!repeat_off` | Disable repeat mode (admin only) |
 
 ### Playlists
 

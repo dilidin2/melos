@@ -54,28 +54,37 @@ class Analytics:
         self._play_history = []
 
     def record_request(self, username: str, query: str):
-        """Records a song request."""
+        """Records a song request.
+
+        Tracks user activity here. Song titles are tracked in record_play()
+        using the resolved title to avoid duplicates from different queries
+        (e.g. 'bela ciao' vs 'bella ciao') pointing to the same song.
+        """
         self._total_requests += 1
 
         # Update count per user
         user_lower = username.lower()
         self._songs_by_user[user_lower] = self._songs_by_user.get(user_lower, 0) + 1
 
-        # Update count per title
-        query_lower = query.lower()
-        self._songs_by_title[query_lower] = self._songs_by_title.get(query_lower, 0) + 1
-
         self._save_stats()
 
-    def record_play(self, username: str, query: str):
-        """Records a completed playback."""
+    def record_play(self, username: str, resolved_title: str):
+        """Records a completed playback.
+
+        Uses the resolved title (from Now Playing) so different queries for
+        the same song are counted as one entry in top songs / history.
+        """
         self._total_plays += 1
+
+        # Update count per resolved title (normalized)
+        title_lower = resolved_title.lower()
+        self._songs_by_title[title_lower] = self._songs_by_title.get(title_lower, 0) + 1
 
         # Add to history
         self._play_history.append(
             {
                 "username": username,
-                "query": query,
+                "query": resolved_title,
                 "timestamp": datetime.now().isoformat(),
             }
         )

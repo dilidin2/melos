@@ -44,6 +44,9 @@ async def main():
     analytics = Analytics()
     music_downloader = MusicDownloader()
 
+    # Wire analytics into the bot so record_request/record_play are called
+    bot.analytics = analytics
+
     # Initialize command handlers with explicit dependencies
     playlist_commands = PlaylistCommands(playlist_manager, bot.request_queue, bot)
     admin_commands = AdminCommands(admin_handler, bot.audio_player, bot.request_queue, bot)

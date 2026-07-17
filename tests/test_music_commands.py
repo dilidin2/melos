@@ -121,17 +121,6 @@ class TestMusicCommands:
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_cmd_stop_repeat(self, mock_cmd):
-        """Test !stop_ripeti command."""
-        mock_command_services = MagicMock()
-        mock_command_services.audio_player.is_paused = MagicMock(return_value=True)
-        mock_command_services.audio_player.resume = MagicMock()
-        commands = MusicCommands(services=mock_command_services)
-        
-        result = await commands.cmd_stop_repeat(mock_cmd)
-        assert result is not None
-
-    @pytest.mark.asyncio
     async def test_cmd_repeat(self, mock_cmd):
         """Test !repeat command."""
         mock_cmd.parameter = "3"

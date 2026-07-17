@@ -46,7 +46,6 @@ from main.config import (
     MUSIC_REPEAT_COMMAND,
     MUSIC_REPEAT_OFF_COMMAND,
     MUSIC_REPEAT_INFINITE_COMMAND,
-    MUSIC_REPEAT_STOP_COMMAND,
     MUSIC_NEXT_COMMAND,
     MUSIC_QUEUE_INFO_COMMAND,
     MUSIC_DURATION_COMMAND,
@@ -235,10 +234,6 @@ class TestConstants:
     def test_music_repeat_infinite_command(self):
         """Test MUSIC_REPEAT_INFINITE_COMMAND is 'ripeti'."""
         assert MUSIC_REPEAT_INFINITE_COMMAND == "ripeti"
-
-    def test_music_repeat_stop_command(self):
-        """Test MUSIC_REPEAT_STOP_COMMAND is 'stop_ripeti'."""
-        assert MUSIC_REPEAT_STOP_COMMAND == "stop_ripeti"
 
     def test_music_next_command(self):
         """Test MUSIC_NEXT_COMMAND is 'next'."""

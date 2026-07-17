@@ -423,7 +423,8 @@ class SongRequestBot:
                 )
 
             if success and hasattr(self, "analytics"):
-                self.analytics.record_play(request.username, request.query)
+                resolved = request.resolved_title or request.query
+                self.analytics.record_play(request.username, resolved)
 
             return success
 
@@ -500,31 +501,60 @@ class SongRequestBot:
                             f for f in files if f.lower().endswith((".mp3", ".wav", ".m4a"))
                         ]
 
-                        if audio_files:
-                            # If there's a last song played, filter to avoid consecutive repetitions
-                            if self.last_random_song:
-                                available = [f for f in audio_files if f != self.last_random_song]
-                                if not available:
-                                    # All files are the last song (only one file present), use that one
-                                    available = audio_files
-                            else:
+                        if not audio_files:
+                            await asyncio.sleep(1)
+                            continue
+
+                        # If there's a last song played, filter to avoid consecutive repetitions
+                        if self.last_random_song:
+                            available = [f for f in audio_files if f != self.last_random_song]
+                            if not available:
                                 available = audio_files
+                        else:
+                            available = audio_files
 
-                            selected = random_module.choice(available)
-                            random_file = os.path.join(DOWNLOAD_DIR, selected)
-                            # Aggiorna il tracking
-                            self.last_random_song = selected
+                        selected = random_module.choice(available)
+                        random_file = os.path.join(DOWNLOAD_DIR, selected)
+                        song_name = os.path.splitext(selected)[0]
 
-                            song_name = os.path.splitext(selected)[0]
+                        # Repeat inner loop — same logic as queue branch
+                        while True:
                             notification = f"Playing random: {song_name}"
-                            # Enable votes for random songs too
                             self.reset_votes()
                             self._vote_active = True
-                            await self._play_audio_file(
+                            success = await self._play_audio_file(
                                 TARGET_CHANNEL, random_file, notification
                             )
-                        else:
-                            await asyncio.sleep(1)
+
+                            if not success:
+                                if self.repeat_mode != 'off':
+                                    logger.warning(f"Playback failed, disabling repeat")
+                                    self.repeat_mode = 'off'
+                                    self.repeat_remaining = 0
+                                break
+
+                            # Gestione repeat
+                            if self.repeat_mode == 'infinite':
+                                logger.info(f"🔁 INFINITE repeat: repeating random '{song_name}'")
+                                continue
+
+                            elif self.repeat_mode == 'count':
+                                self.repeat_remaining -= 1
+                                if self.repeat_remaining > 0:
+                                    logger.info(
+                                        f"🔁 Repeat ({self.repeat_remaining}/{self.repeat_count}): "
+                                        f"repeating random '{song_name}'"
+                                    )
+                                    continue
+                                else:
+                                    self.repeat_mode = 'off'
+                                    logger.info(f"🔁 Repeat ended after {self.repeat_count} times")
+                                    break
+                            else:
+                                # repeat_mode == 'off' — normal flow
+                                break
+
+                        self.last_random_song = selected
                     except Exception as e:
                         logger.error(f"Error selecting random song: {e}")
                         await asyncio.sleep(1)

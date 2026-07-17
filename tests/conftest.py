@@ -207,7 +207,6 @@ def mock_config():
         "MUSIC_REPEAT_COMMAND": "repeat",
         "MUSIC_REPEAT_OFF_COMMAND": "repeat_off",
         "MUSIC_REPEAT_INFINITE_COMMAND": "ripeti",
-        "MUSIC_REPEAT_STOP_COMMAND": "stop_ripeti",
         "MUSIC_NEXT_COMMAND": "next",
         "MUSIC_QUEUE_INFO_COMMAND": "queue_info",
         "MUSIC_DURATION_COMMAND": "duration",
