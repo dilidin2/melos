@@ -343,6 +343,33 @@ class TwitchHandler:
         try:
             if self.chat:
                 self.chat.stop()
+
+                # twitchAPI's Chat.__run_socket() creates its own private
+                # asyncio event loop for the websocket thread and never closes
+                # it or shuts down its default executor. aiohttp's DNS
+                # resolver (ThreadedResolver) lazily creates that executor via
+                # run_in_executor during ws_connect(), leaving a non-daemon
+                # worker thread alive forever after stop() — which hangs the
+                # interpreter on exit. Clean it up manually since the library
+                # doesn't. Attribute names are name-mangled (Chat.__socket_*).
+                #
+                # NOTE: we are inside a coroutine running on the MAIN loop,
+                # so we cannot call socket_loop.run_until_complete(...) here —
+                # asyncio forbids nesting a second loop in the same thread
+                # ("Cannot run the event loop while another loop is running").
+                # ThreadPoolExecutor.shutdown() is a plain synchronous method
+                # (no event loop involved), so we call it directly instead of
+                # going through the coroutine-based shutdown_default_executor().
+                socket_thread = getattr(self.chat, "_Chat__socket_thread", None)
+                socket_loop = getattr(self.chat, "_Chat__socket_loop", None)
+                if socket_thread is not None:
+                    socket_thread.join(timeout=2)
+                if socket_loop is not None and not socket_loop.is_closed():
+                    executor = getattr(socket_loop, "_default_executor", None)
+                    if executor is not None:
+                        executor.shutdown(wait=True, cancel_futures=True)
+                    socket_loop.close()
+
             if self.twitch:
                 await self.twitch.close()
             self._connected = False

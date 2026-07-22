@@ -33,14 +33,15 @@ class AnalyticsCommands:
 
         return "\n".join(lines)
 
-    async def cmd_top_songs(self, username: str, n: int = 10) -> str:
-        """!top_canzoni [number] - Shows the N most requested songs."""
+    async def cmd_top_songs(self, username: str, n: int = 5) -> str:
+        """!top_songs [number] - Shows the N most requested songs (max 5 to stay under Twitch's 500 char limit)."""
+        n = min(n, 5)
         songs = self.analytics.get_top_songs(n)
 
         if not songs:
             return "📭 No statistics available."
 
-        lines = [f"🎵 Top {n} Requested Songs:"]
+        lines = [f"🎵 Top {len(songs)} Requested Songs:"]
         for i, song in enumerate(songs, 1):
             lines.append(f"  {i}. {song['title']} - {song['count']} times")
 

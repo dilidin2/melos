@@ -5,8 +5,6 @@ This is the main executable that starts the bot with all features.
 """
 
 import asyncio
-import signal
-import sys
 
 from main.config import (
     TARGET_CHANNEL,
@@ -79,25 +77,11 @@ async def main():
     bot.twitch_handler.set_command_callback(bot._handle_song_request)
     bot.twitch_handler.command_processor = command_processor
 
-    loop = asyncio.get_running_loop()
-    shutdown_task = None
-
-    def signal_handler(sig, frame):
-        """Handles shutdown signals."""
-        nonlocal shutdown_task
-        logger.info("Signal received, shutting down...")
-
-        if shutdown_task and not shutdown_task.done():
-            return
-
-        shutdown_task = loop.create_task(bot.shutdown())
-        shutdown_task.add_done_callback(
-            lambda f: loop.call_soon_threadsafe(lambda: sys.exit(0))
-        )
-
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
+    # NOTE: bot.run() registers its own signal handlers internally via
+    # loop.add_signal_handler(sig, self._signal_handler) for SIGINT/SIGTERM.
+    # That call replaces any handler installed here via signal.signal(), so
+    # we don't duplicate signal handling in this file — it would just be
+    # dead code, silently overridden the moment bot.run() executes.
     await bot.run()
 
 

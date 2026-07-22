@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Melos — Your Viewers Pick the Music</title>
+  <meta name="description" content="A free Twitch music bot that runs on your PC. Let your chat request songs live during stream. No subscriptions. No ads. Yours forever." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Unbounded:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #1A1410;
+      --bg-elevated: #231C15;
+      --bg-card: #2C2319;
+      --text: #F5EDE0;
+      --text-muted: #A89880;
+      --accent: #E89B3E;
+      --accent-glow: rgba(232, 155, 62, .15);
+      --secondary: #C4623A;
+      --green: #6BBF69;
+      --red: #D94F4F;
+      --radius: 12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── M Mark (signature) ─────────────────────────── */
+    .m-mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 2.5rem;
+      position: relative;
+    }
+
+    .m-mark svg {
+      width: 80px;
+      height: 80px;
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    .m-mark::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      animation: breathe-ring 3s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    @keyframes breathe-ring {
+      0%, 100% { transform: scale(.9); opacity: .3; }
+      50% { transform: scale(1.2); opacity: .08; }
+    }
+
+    /* ── Layout ──────────────────────────────────────── */
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    section { padding: 5rem 0; }
+
+    /* ── Typography ──────────────────────────────────── */
+    h1, h2, h3 {
+      font-family: 'Unbounded', sans-serif;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    .eyebrow {
+      font-family: 'Unbounded', sans-serif;
+      font-size: .8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: .75rem;
+    }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 6rem 0 5rem;
+      position: relative;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 800;
+      margin-bottom: 1.25rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero h1 span { color: var(--accent); }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 540px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      font-family: 'Unbounded', sans-serif;
+      font-size: .9rem;
+      font-weight: 600;
+      padding: .85rem 2rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #1A1410;
+      box-shadow: 0 4px 24px rgba(232, 155, 62, .3);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 8px 32px rgba(232, 155, 62, .45);
+    }
+
+    .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid rgba(245, 237, 224, .15);
+    }
+
+    .btn-ghost:hover {
+      color: var(--text);
+      border-color: rgba(245, 237, 224, .3);
+      box-shadow: none;
+    }
+
+    /* ── Features ─────────────────────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-top: 3rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 2rem;
+      border: 1px solid rgba(245, 237, 224, .06);
+      transition: border-color .3s, transform .3s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(232, 155, 62, .25);
+      transform: translateY(-3px);
+    }
+
+    .feature-icon {
+      font-size: 1.6rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .feature-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: .5rem;
+    }
+
+    .feature-card p {
+      font-size: .92rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── Comparison ───────────────────────────────────── */
+    .comparison { background: var(--bg-elevated); }
+
+    .comparison-table {
+      margin-top: 3rem;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid rgba(245, 237, 224, .08);
+    }
+
+    .comparison-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      border-bottom: 1px solid rgba(245, 237, 224, .06);
+    }
+
+    .comparison-row:last-child { border-bottom: none; }
+
+    .comparison-header {
+      font-family: 'Unbounded', sans-serif;
+      font-weight: 700;
+      font-size: .85rem;
+      padding: 1.25rem 1.5rem;
+      background: var(--bg-card);
+      text-align: center;
+    }
+
+    .comparison-header:first-child { text-align: left; }
+
+    .comparison-cell {
+      padding: 1.1rem 1.5rem;
+      font-size: .92rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      background: var(--bg-elevated);
+    }
+
+    .comparison-cell:first-child {
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .comparison-cell:not(:first-child) { justify-content: center; }
+
+    .check { color: var(--green); font-weight: 700; }
+    .cross { color: var(--red); font-weight: 700; }
+
+    /* ── Steps ────────────────────────────────────────── */
+    .steps { counter-reset: step; }
+
+    .steps-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .step-item {
+      position: relative;
+      padding-left: 3.5rem;
+    }
+
+    .step-item::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 2.25rem;
+      height: 2.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Unbounded', sans-serif;
+      font-weight: 800;
+      font-size: .95rem;
+      color: var(--bg);
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    .step-item h3 {
+      font-size: 1.05rem;
+      margin-bottom: .4rem;
+    }
+
+    .step-item p {
+      color: var(--text-muted);
+      font-size: .92rem;
+    }
+
+    /* ── Commands preview ─────────────────────────────── */
+    .commands-section { background: var(--bg-elevated); }
+
+    .command-groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .command-group h3 {
+      font-size: .95rem;
+      margin-bottom: 1rem;
+      color: var(--accent);
+    }
+
+    .cmd {
+      display: flex;
+      align-items: baseline;
+      gap: .75rem;
+      padding: .45rem 0;
+      font-size: .92rem;
+    }
+
+    .cmd code {
+      font-family: 'Unbounded', sans-serif;
+      font-weight: 600;
+      font-size: .82rem;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .cmd span { color: var(--text-muted); }
+
+    /* ── CTA footer ───────────────────────────────────── */
+    .cta-footer {
+      text-align: center;
+      padding: 5rem 0 6rem;
+    }
+
+    .cta-footer h2 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      margin-bottom: 1rem;
+    }
+
+    .cta-footer p {
+      color: var(--text-muted);
+      max-width: 460px;
+      margin: 0 auto 2rem;
+      font-size: 1.05rem;
+    }
+
+    /* ── Nav ──────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 1.5rem;
+      background: rgba(26, 20, 16, .8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(245, 237, 224, .06);
+    }
+
+    .nav-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      font-family: 'Unbounded', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-logo span { color: var(--accent); }
+
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+
+    .nav-links a {
+      font-size: .85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── Footer ───────────────────────────────────────── */
+    footer {
+      padding: 2rem 0;
+      border-top: 1px solid rgba(245, 237, 224, .06);
+      text-align: center;
+      font-size: .82rem;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ── Reduced motion ───────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      .m-mark svg, .m-mark::before { animation: none; }
+      .feature-card:hover { transform: none; }
+      .btn:hover { transform: none; }
+    }
+
+    /* ── Mobile tweaks ────────────────────────────────── */
+    @media (max-width: 600px) {
+      section { padding: 3.5rem 0; }
+      .hero { padding: 4.5rem 0 3.5rem; }
+
+      .comparison-cell, .comparison-header {
+        padding: .85rem 1rem;
+        font-size: .82rem;
+      }
+
+      .nav-links a:not(.btn) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">me<span>los</span></a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#why">Why Melos</a>
+        <a href="#commands">Commands</a>
+        <a href="https://github.com/dilidin2/melos" class="btn btn-primary" style="padding:.55rem 1.3rem;font-size:.78rem;">Get It Free →</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="m-mark">
+        <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 64V16L40 44L68 16V64" stroke="#E89B3E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1>Your chat picks the music.<br /><span>You keep full control.</span></h1>
+      <p>A free Twitch bot that runs on your own PC. Viewers type a command, the song plays live on your stream. No ads, no subscriptions, no third-party servers.</p>
+      <div class="hero-actions">
+        <a href="https://github.com/dilidin2/melos" class="btn btn-primary">Download — It's Free</a>
+        <a href="#features" class="btn btn-ghost">See What It Does</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="container">
+      <p class="eyebrow">Everything you need</p>
+      <h2 style="font-size:clamp(1.6rem,4vw,2.4rem);max-width:500px;">Built for streamers who want<br>their viewers in the DJ booth</h2>
+      <div class="features-grid">
+
+        <div class="feature-card">
+          <span class="feature-icon">🎤</span>
+          <h3>Song Requests From Chat</h3>
+          <p>Your viewers type a simple command and their song joins the queue. Melos fetches it from YouTube and plays it live — no setup on their end.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🗳️</span>
+          <h3>Skip Voting</h3>
+          <p>Three different viewers can vote to skip a song. Democracy, not dictatorship — keeps the vibe fair for everyone.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">📻</span>
+          <h3>Auto-Plays When Empty</h3>
+          <p>No requests in the queue? Melos picks a random song from your library and keeps the music going. Your stream never goes silent.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">📋</span>
+          <h3>Viewer Playlists</h3>
+          <p>Your community can create playlists, add songs, and queue up batches of random tracks. It's like a shared jukebox.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🛡️</span>
+          <h3>You Control What Plays</h3>
+          <p>Whitelist specific YouTube channels so only approved music gets downloaded. Block users who abuse the bot. It's your stream.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">📊</span>
+          <h3>Built-In Stats</h3>
+          <p>See which songs are most requested, who your top listeners are, and the full history of what's been played. All in chat.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Self-Hosted -->
+  <section id="why" class="comparison">
+    <div class="container">
+      <p class="eyebrow">Why not an online service?</p>
+      <h2 style="font-size:clamp(1.6rem,4vw,2.4rem);max-width:500px;">Melos runs on your PC.<br />Everything else runs on someone else's.</h2>
+
+      <div class="comparison-table">
+        <div class="comparison-row">
+          <div class="comparison-header">Aspect</div>
+          <div class="comparison-header" style="color:var(--accent);">Melos</div>
+          <div class="comparison-header">Online Music Bots</div>
+        </div>
+
+        <div class="comparison-row">
+          <div class="comparison-cell">Cost</div>
+          <div class="comparison-cell"><span class="check">✓</span> Free forever</div>
+          <div class="comparison-cell"><span class="cross">✗</span> Subscriptions, paywalls</div>
+        </div>
+
+        <div class="comparison-row">
+          <div class="comparison-cell">Your data stays yours</div>
+          <div class="comparison-cell"><span class="check">✓</span> 100% on your machine</div>
+          <div class="comparison-cell"><span class="cross">✗</span> Stored on their servers</div>
+        </div>
+
+        <div class="comparison-row">
+          <div class="comparison-cell">Ads or interruptions</div>
+          <div class="comparison-cell"><span class="check">✓</span> None. Ever.</div>
+          <div class="comparison-cell"><span class="cross">✗</span> Common with free tiers</div>
+        </div>
+
+        <div class="comparison-row">
+          <div class="comparison-cell">Latency / sound quality</div>
+          <div class="comparison-cell"><span class="check">✓</span> Direct from your PC audio</div>
+          <div class="comparison-cell"><span class="cross">✗</span> Depends on their server</div>
+        </div>
+
+        <div class="comparison-row">
+          <div class="comparison-cell">Control over what plays</div>
+          <div class="comparison-cell"><span class="check">✓</span> Full channel whitelisting</div>
+          <div class="comparison-cell"><span class="cross">✗</span> Limited or no filtering</div>
+        </div>
+
+        <div class="comparison-row">
+          <div class="comparison-cell">If the service shuts down</div>
+          <div class="comparison-cell"><span class="check">✓</span> Your library is safe on disk</div>
+          <div class="comparison-cell"><span class="cross">✗</span> Everything disappears</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how">
+    <div class="container">
+      <p class="eyebrow">Up and running in minutes</p>
+      <h2 style="font-size:clamp(1.6rem,4vw,2.4rem);max-width:500px;">Three steps. That's it.</h2>
+
+      <div class="steps-list">
+        <div class="step-item">
+          <h3>Download Melos</h3>
+          <p>Grab the code from GitHub and install the dependencies. It takes a minute — no special hardware needed, just your streaming PC.</p>
+        </div>
+        <div class="step-item">
+          <h3>Connect to Your Channel</h3>
+          <p>Set your Twitch channel name in a config file and authorize once through a browser. Melos joins your chat and waits for commands.</p>
+        </div>
+        <div class="step-item">
+          <h3>Let Your Viewers Play</h3>
+          <p>Your audience types <code style="font-family:'Unbounded',sans-serif;font-weight:600;color:var(--accent);font-size:.85rem;">!sr song name</code> in chat. Melos finds it, plays it through your stream. Done.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Commands -->
+  <section id="commands" class="commands-section">
+    <div class="container">
+      <p class="eyebrow">What viewers can do</p>
+      <h2 style="font-size:clamp(1.6rem,4vw,2.4rem);max-width:500px;">Simple commands. Zero learning curve.</h2>
+
+      <div class="command-groups">
+        <div class="command-group">
+          <h3>Music</h3>
+          <div class="cmd"><code>!sr &lt;song&gt;</code><span>Request a song</span></div>
+          <div class="cmd"><code>!random</code><span>Play random tracks from your library</span></div>
+          <div class="cmd"><code>!vote</code><span>Vote to skip the current song</span></div>
+          <div class="cmd"><code>!next</code><span>See what's up next</span></div>
+          <div class="cmd"><code>!when</code><span>Estimate when your song plays</span></div>
+        </div>
+
+        <div class="command-group">
+          <h3>Playlists</h3>
+          <div class="cmd"><code>!create &lt;name&gt;</code><span>Create a playlist</span></div>
+          <div class="cmd"><code>!add &lt;list&gt; &lt;song&gt;</code><span>Add a song to it</span></div>
+          <div class="cmd"><code>!pump &lt;list&gt;</code><span>Queue random songs from it</span></div>
+        </div>
+
+        <div class="command-group">
+          <h3>Stats</h3>
+          <div class="cmd"><code>!stats</code><span>Bot activity overview</span></div>
+          <div class="cmd"><code>!top_songs</code><span>Most requested songs</span></div>
+          <div class="cmd"><code>!top_users</code><span>Most active requesters</span></div>
+        </div>
+
+        <div class="command-group">
+          <h3>Admin (you)</h3>
+          <div class="cmd"><code>!volume &lt;0-100&gt;</code><span>Set playback volume</span></div>
+          <div class="cmd"><code>!skip</code><span>Skip the current song</span></div>
+          <div class="cmd"><code>!blacklist &lt;user&gt;</code><span>Block a user</span></div>
+          <div class="cmd"><code>!trust_channel</code><span>Approve a YouTube channel</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-footer">
+    <div class="container">
+      <h2>Your stream. Your music.<br />Your rules.</h2>
+      <p>Melos is free and open-source. No sign-ups, no tracking, no middlemen. Just clone the repo and start your own jukebox tonight.</p>
+      <a href="https://github.com/dilidin2/melos" class="btn btn-primary">Get Melos on GitHub →</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>Released under the <a href="https://github.com/dilidin2/melos/blob/master/LICENSE">MIT License</a>. Built by <a href="https://github.com/dilidin2">dilidin2</a>.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

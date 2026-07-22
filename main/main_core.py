@@ -173,6 +173,7 @@ class SongRequestBot:
         self._processing_lock = asyncio.Lock()
         self._shutdown_event = asyncio.Event()
         self._shutdown_initiated = False
+        self._shutdown_task: Optional[asyncio.Task] = None
         self._request_counter = 0
 
         # Repeat mode settings
@@ -602,7 +603,7 @@ class SongRequestBot:
         """Handler for SIGINT/SIGTERM."""
         if not self._shutdown_initiated:
             logger.info("Shutdown signal received (Ctrl+C)")
-            asyncio.create_task(self.shutdown())
+            self._shutdown_task = asyncio.create_task(self.shutdown())
 
     async def run(self):
         """Starts the bot."""
@@ -633,6 +634,18 @@ class SongRequestBot:
 
         try:
             await self._shutdown_event.wait()
+            # _shutdown_event is set near the START of shutdown(), as a
+            # signal to stop accepting new work — it does NOT mean cleanup
+            # (twitch disconnect, queue persistence, executor shutdown) has
+            # finished. When shutdown() was launched as a detached task from
+            # _signal_handler (a real Ctrl+C), we must wait for that task to
+            # fully complete here. Otherwise this coroutine (and therefore
+            # main()) returns immediately, asyncio.run() starts its teardown,
+            # and forcibly cancels the still-running shutdown task mid-cleanup
+            # — which can hang forever if it's currently inside a blocking,
+            # non-cooperative call like executor.shutdown(wait=True).
+            if self._shutdown_task is not None:
+                await self._shutdown_task
         except asyncio.CancelledError:
             logger.info("Shutdown in progress...")
         except KeyboardInterrupt:
@@ -666,7 +679,12 @@ class SongRequestBot:
         except asyncio.TimeoutError:
             logger.warning("Twitch disconnect timeout, forced")
 
-        self.executor.shutdown(wait=False, cancel_futures=True)
+        # Give the executor thread time to see audio_player._stop_event
+        # before we shut down the pool. Without this sleep the thread is still
+        # inside time.sleep(0.1) in AudioPlayer.play() and wait=True would
+        # block for up to ~100 ms anyway; an explicit sleep makes it predictable.
+        await asyncio.sleep(0.3)
+        self.executor.shutdown(wait=True, cancel_futures=True)
 
         try:
             loop = asyncio.get_running_loop()
