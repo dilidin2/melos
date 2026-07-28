@@ -121,53 +121,6 @@ class MusicCommands:
 
         return f"⏭️ Next song: **{title}** (requested by @{request.username})"
 
-    async def cmd_queue_info(self, username: str) -> str:
-        """!queue_info - Shows complete queue info.
-
-        Includes: number of songs in queue, next song,
-        estimated total duration and repeat status.
-        """
-        if not self._request_queue:
-            return "❌ Unable to access the queue."
-
-        items = self._request_queue.get_items(count=10)
-        if not items:
-            return "📊 Queue info: Queue is empty."
-
-        # Calculate estimated total duration
-        total_duration = 0
-        for item in items:
-            if self._music_downloader:
-                song_info = self._music_downloader.get_song_info(item.query)
-                if song_info and song_info.get("duration", 0) > 0:
-                    total_duration += song_info["duration"]
-            # If we don't have info, use 4 minutes as average
-            if total_duration == 0:
-                total_duration += 240  # 4 minutes
-
-        hours = total_duration // 3600
-        minutes = (total_duration % 3600) // 60
-
-        # Repeat status
-        repeat_status = "Disabled"
-        if self._bot and hasattr(self._bot, 'repeat_mode'):
-            if self._bot.repeat_mode == 'infinite':
-                repeat_status = "Infinite"
-            elif self._bot.repeat_mode == 'count':
-                repeat_status = f"{self._bot.repeat_count} times"
-            else:
-                repeat_status = "Disabled"
-
-        lines = [
-            f"📊 **Queue Info:**",
-            f"  • Songs in queue: {len(items)}",
-            f"  • Estimated duration: {hours}h {minutes}m",
-            f"  • Repeat: {repeat_status}",
-            f"  • Next: **{items[0].query}**",
-        ]
-
-        return "\n".join(lines)
-
     async def cmd_duration(self, username: str, query: str) -> str:
         """!duration <song> - Shows the duration of a song.
 
@@ -295,30 +248,23 @@ class MusicCommands:
         if not self._request_queue:
             return "❌ Unable to access the queue."
 
-        queue_list = self._request_queue.queue._queue
+        items = self._request_queue.get_items(count=1000)
         # Search from the end to find the LAST song by this user
-        user_request = None
-        for i in range(len(queue_list) - 1, -1, -1):
-            if queue_list[i].username == username:
-                user_request = queue_list[i]
-                del queue_list[i]
+        for i in range(len(items) - 1, -1, -1):
+            if items[i].username == username:
+                removed = await self._request_queue.remove_by_index(i)
+                if removed:
+                    # Persist the change
+                    if self._bot and hasattr(self._bot, '_persist_queue'):
+                        import asyncio
+                        try:
+                            asyncio.create_task(self._bot._persist_queue())
+                        except Exception:
+                            pass
+                    return f"🗑️ Removed **{removed.query}** from the queue (your last song)."
                 break
 
-        if user_request is None:
-            return "❌ You don't have any songs in the queue."
-
-        # Use the user's original query — no online lookup needed
-        title = user_request.query
-
-        # Persist the change
-        if self._bot and hasattr(self._bot, '_persist_queue'):
-            import asyncio
-            try:
-                asyncio.create_task(self._bot._persist_queue())
-            except Exception:
-                pass
-
-        return f"🗑️ Removed **{title}** from the queue (your last song)."
+        return "❌ You don't have any songs in the queue."
 
     async def cmd_vote(self, username: str) -> str:
         """!vote - Vote to skip the current song (needs N voters)."""

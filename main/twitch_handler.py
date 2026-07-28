@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import aiohttp
-from twitchAPI.chat import Chat, ChatEvent, ChatMessage, EventData
+from twitchAPI.chat import Chat, ChatEvent, EventData
 from twitchAPI.twitch import Twitch
 from twitchAPI.type import AuthScope
 from loguru import logger
@@ -63,7 +63,6 @@ class TwitchHandler:
             rf"{re.escape(CHAT_COMMAND_PREFIX)}"
             rf"{re.escape(SONG_REQUEST_COMMAND)}\s+(.+?)$"
         )
-        self.multiple_patterns: list[str] = []
         self._connected = False
 
         # Command processor (opzionale)
@@ -163,16 +162,6 @@ class TwitchHandler:
 
     # ── Command handlers ──────────────────────────────────────────────────────
 
-    async def _handle_message(self, msg: ChatMessage):
-        """Handles chat messages (only NON-command messages).
-
-        Commands (!) are already handled by register_command → _handle_sr_command /
-        _handle_other_command. Processing them here too would cause double sending.
-        """
-        text = msg.text.strip()
-        if text.startswith(CHAT_COMMAND_PREFIX):
-            return
-
     async def _handle_sr_command(self, cmd):
         """Handles the !sr command that goes to the music queue."""
         query = cmd.parameter.strip() if cmd.parameter else ""
@@ -236,53 +225,20 @@ class TwitchHandler:
 
             # Aggiungi listener per i messaggi
             self.chat.register_event(ChatEvent.READY, self._on_ready)
-            self.chat.register_event(ChatEvent.MESSAGE, self._handle_message)
 
             # Register Twitch commands
-            # !sr goes to the callback for the music queue
             self.chat.register_command("sr", self._handle_sr_command)
-            # All others go to the command_processor
-            self.chat.register_command("create", self._handle_other_command)
-            self.chat.register_command("playlist", self._handle_other_command)
-            self.chat.register_command("add", self._handle_other_command)
-            self.chat.register_command("remove", self._handle_other_command)
-            self.chat.register_command("move", self._handle_other_command)
-            self.chat.register_command("clear", self._handle_other_command)
-            self.chat.register_command("pump", self._handle_other_command)
-            # Admin commands
-            self.chat.register_command("blacklist", self._handle_other_command)
-            self.chat.register_command("unblacklist", self._handle_other_command)
-            self.chat.register_command("blacklist_list", self._handle_other_command)
-            self.chat.register_command("trust_channel", self._handle_other_command)
-            self.chat.register_command("untrust_channel", self._handle_other_command)
-            self.chat.register_command("trusted_channels", self._handle_other_command)
-            self.chat.register_command("skip", self._handle_other_command)
-            self.chat.register_command("remove_queue", self._handle_other_command)
-            self.chat.register_command("queue_info", self._handle_other_command)
-            self.chat.register_command("clear_queue", self._handle_other_command)
-            # Analytics commands
-            self.chat.register_command("stats", self._handle_other_command)
-            self.chat.register_command("top_songs", self._handle_other_command)
-            self.chat.register_command("top_users", self._handle_other_command)
-            self.chat.register_command("history", self._handle_other_command)
-            # Music commands
-            self.chat.register_command("volume", self._handle_other_command)
-            self.chat.register_command("pause", self._handle_other_command)
-            self.chat.register_command("resume", self._handle_other_command)
-            self.chat.register_command("repeat", self._handle_other_command)
-            self.chat.register_command("repeat_off", self._handle_other_command)
-            self.chat.register_command("next", self._handle_other_command)
-            self.chat.register_command("queue_info", self._handle_other_command)
-            self.chat.register_command("duration", self._handle_other_command)
-            self.chat.register_command("when", self._handle_other_command)
-            self.chat.register_command("random", self._handle_other_command)
-            self.chat.register_command("ops", self._handle_other_command)
-            # Vote to skip
-            self.chat.register_command("vote", self._handle_other_command)
-            # Utility commands
-            self.chat.register_command("help", self._handle_other_command)
-            self.chat.register_command("version", self._handle_other_command)
-            self.chat.register_command("uptime", self._handle_other_command)
+            for name in {
+                "create", "playlist", "add", "remove", "move", "clear", "pump",
+                "blacklist", "unblacklist", "blacklist_list",
+                "trust_channel", "untrust_channel", "trusted_channels",
+                "skip", "remove_queue", "clear_queue",
+                "stats", "top_songs", "top_users", "history",
+                "volume", "pause", "resume", "repeat", "repeat_off",
+                "next", "queue_info", "duration", "when", "random", "ops",
+                "vote", "help", "version", "uptime",
+            }:
+                self.chat.register_command(name, self._handle_other_command)
 
             # Start the chat
             self.chat.start()
@@ -313,11 +269,6 @@ class TwitchHandler:
             or rf"{re.escape(CHAT_COMMAND_PREFIX)}"
                rf"{re.escape(SONG_REQUEST_COMMAND)}\s+(.+?)$"
         )
-
-    def set_multiple_commands(self, patterns: list[str], callback: Callable):
-        """Sets multiple commands with different patterns."""
-        self.command_callback = callback
-        self.multiple_patterns = patterns
 
     async def send_message(self, channel_id: str, message: str) -> bool:
         """Sends a message in the chat."""

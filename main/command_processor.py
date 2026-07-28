@@ -46,29 +46,229 @@ from main.config import (
     UTILITY_VERSION_COMMAND,
     UTILITY_UPTIME_COMMAND,
 )
-from main.services import CommandServices
-from commands import admin_required
-
-
-class CompiledPattern:
-    """Wraps a compiled regex pattern for fast matching."""
-    __slots__ = ("regex", "method_name")
-
-    def __init__(self, pattern: str, method_name: str):
-        self.regex = re.compile(pattern, re.IGNORECASE)
-        self.method_name = method_name
 
 
 class CommandProcessor:
-    """Processes and handles all chat commands with explicit DI."""
+    """Processes and handles all chat commands."""
 
-    def __init__(self, services: CommandServices):
-        self.services = services
-        # Dynamically discover which cmd_* methods require admin permissions
-        self._admin_methods: set[str] = self._build_admin_set()
-        self.services = services
+    def __init__(
+        self,
+        bot,
+        playlist_commands,
+        admin_commands,
+        analytics_commands,
+        music_commands,
+        utility_commands,
+        music_downloader,
+    ):
+        self.bot = bot
+        self._playlist = playlist_commands
+        self._admin = admin_commands
+        self._analytics = analytics_commands
+        self._music = music_commands
+        self._utility = utility_commands
+        self._downloader = music_downloader
 
+        # Discover which handler methods require admin via @admin_required marker
+        self._admin_methods: set[str] = set()
+        for obj in (playlist_commands, admin_commands, analytics_commands, music_commands, utility_commands):
+            for name in dir(obj):
+                if name.startswith("cmd_"):
+                    attr = getattr(obj, name)
+                    if callable(attr) and getattr(attr, "_requires_admin", False):
+                        self._admin_methods.add(name)
+
+        # Build dispatch registry: method_name -> (callable, needs_admin)
         prefix = re.escape(CHAT_COMMAND_PREFIX)
+
+        def h(fn):
+            """Wrap a handler, returning (callable, is_admin)."""
+            return (fn, fn.__name__ in self._admin_methods)
+
+        def cmd(fn):
+            return fn
+
+        # ── Handlers: each takes (groups, username, channel_id) ──
+
+        @cmd
+        async def h_create(g, u, c):
+            return await self._playlist.cmd_create(u, g[0])
+
+        @cmd
+        async def h_playlist(g, u, c):
+            nome, page_str = g[0], g[1]
+            page = int(page_str) if page_str else 1
+            if nome is None:
+                nome, page = None, 1
+            return await self._playlist.cmd_playlist(u, nome, page)
+
+        @cmd
+        async def h_add(g, u, c):
+            playlist_name, query = g[0], g[1]
+            file_path = "unknown"
+            if self._downloader:
+                local_match = self._downloader._find_matching_file(query)
+                if local_match:
+                    file_path = local_match
+            return await self._playlist.cmd_add(u, playlist_name, query, file_path, u)
+
+        @cmd
+        async def h_remove(g, u, c):
+            return await self._playlist.cmd_remove(u, g[0], g[1])
+
+        @cmd
+        async def h_move(g, u, c):
+            return await self._playlist.cmd_move(u, g[0], g[1], g[2])
+
+        @cmd
+        async def h_clear(g, u, c):
+            return await self._playlist.cmd_clear(u, g[0])
+
+        @cmd
+        async def h_pump(g, u, c):
+            n = int(g[1]) if g[1] else 5
+            return await self._playlist.cmd_pump(u, g[0], n, c)
+
+        @cmd
+        async def h_blacklist(g, u, c):
+            return await self._admin.cmd_blacklist(u, g[0])
+
+        @cmd
+        async def h_unblacklist(g, u, c):
+            return await self._admin.cmd_unblacklist(u, g[0])
+
+        @cmd
+        async def h_blacklist_list(g, u, c):
+            return await self._admin.cmd_blacklist_list(u)
+
+        @cmd
+        async def h_skip(g, u, c):
+            return await self._admin.cmd_skip(u)
+
+        @cmd
+        async def h_trust_channel(g, u, c):
+            return await self._admin.cmd_trust_channel(u, g[0])
+
+        @cmd
+        async def h_untrust_channel(g, u, c):
+            return await self._admin.cmd_untrust_channel(u, g[0])
+
+        @cmd
+        async def h_trusted_channels_list(g, u, c):
+            return await self._admin.cmd_trusted_channels_list(u)
+
+        @cmd
+        async def h_remove_queue(g, u, c):
+            return await self._admin.cmd_remove_queue(u, g[0])
+
+        @cmd
+        async def h_clear_queue(g, u, c):
+            return await self._admin.cmd_clear_queue(u)
+
+        @cmd
+        async def h_stats(g, u, c):
+            return await self._analytics.cmd_stats(u)
+
+        @cmd
+        async def h_top_songs(g, u, c):
+            n = int(g[0]) if g[0] else 10
+            return await self._analytics.cmd_top_songs(u, n)
+
+        @cmd
+        async def h_top_users(g, u, c):
+            n = int(g[0]) if g[0] else 10
+            return await self._analytics.cmd_top_users(u, n)
+
+        @cmd
+        async def h_history(g, u, c):
+            n = int(g[0]) if g[0] else 10
+            return await self._analytics.cmd_history(u, n)
+
+        @cmd
+        async def h_pause(g, u, c):
+            return await self._music.cmd_pause(u)
+
+        @cmd
+        async def h_resume(g, u, c):
+            return await self._music.cmd_resume(u)
+
+        @cmd
+        async def h_repeat(g, u, c):
+            count = g[0]
+            if count is None:
+                return await self._music.cmd_repeat(u, -1)
+            count = int(count)
+            if count == 0:
+                return await self._music.cmd_repeat_off(u)
+            return await self._music.cmd_repeat(u, count)
+
+        @cmd
+        async def h_repeat_off(g, u, c):
+            return await self._music.cmd_repeat_off(u)
+
+        @cmd
+        async def h_volume(g, u, c):
+            return await self._music.cmd_volume(u, int(g[0]))
+
+        @cmd
+        async def h_next(g, u, c):
+            return await self._music.cmd_next(u)
+
+        @cmd
+        async def h_queue_info(g, u, c):
+            return await self._utility.cmd_queue_info(u, c)
+
+        @cmd
+        async def h_duration(g, u, c):
+            return await self._music.cmd_duration(u, g[0])
+
+        @cmd
+        async def h_when(g, u, c):
+            return await self._music.cmd_when(u, c)
+
+        @cmd
+        async def h_random(g, u, c):
+            n = int(g[0]) if g[0] else 1
+            return await self._music.cmd_random(u, n)
+
+        @cmd
+        async def h_ops(g, u, c):
+            return await self._music.cmd_ops(u)
+
+        @cmd
+        async def h_help(g, u, c):
+            command = g[0] if g[0] else ""
+            return await self._utility.cmd_help(u, command)
+
+        @cmd
+        async def h_version(g, u, c):
+            return await self._utility.cmd_version(u)
+
+        @cmd
+        async def h_uptime(g, u, c):
+            bot = self.bot
+            if bot and hasattr(bot, "_start_time"):
+                elapsed = time.time() - bot._start_time
+                days = int(elapsed // 86400)
+                hours = int((elapsed % 86400) // 3600)
+                minutes = int((elapsed % 3600) // 60)
+                seconds = int(elapsed % 60)
+                parts = []
+                if days > 0:
+                    parts.append(f"{days}d")
+                if hours > 0:
+                    parts.append(f"{hours}h")
+                if minutes > 0 or not parts:
+                    parts.append(f"{minutes}m")
+                parts.append(f"{seconds}s")
+                return f"⏱️ Bot has been running for: {' '.join(parts)}"
+            return await self._utility.cmd_uptime(u)
+
+        @cmd
+        async def h_vote(g, u, c):
+            return await self._music.cmd_vote(u)
+
+        # Registry: (compiled_regex, handler, needs_admin)
         sr_prefix = re.escape(SONG_REQUEST_COMMAND)
         p_create = re.escape(PLAYLIST_CREATE_COMMAND)
         p_view = re.escape(PLAYLIST_VIEW_COMMAND)
@@ -107,105 +307,76 @@ class CommandProcessor:
         util_uptime = re.escape(UTILITY_UPTIME_COMMAND)
         vote_skip = re.escape(VOTE_SKIP_COMMAND)
 
-        raw_patterns = {
-            rf"{prefix}{sr_prefix}\s+(.+)$": "cmd_sr",
-            rf"{prefix}{p_create}\s+(\w+)$": "cmd_create",
-            rf"{prefix}{p_view}(?:\s+(\w+)(?:\s+(\d+))?)?$": "cmd_playlist",
-            rf"{prefix}{p_add}\s+(\w+)\s+(.+)$": "cmd_add",
-            rf"{prefix}{p_remove}\s+(\w+)\s+(.+)$": "cmd_remove",
-            rf"{prefix}{p_move}\s+(\w+)\s+(\d+)\s+(\d+)$": "cmd_move",
-            rf"{prefix}{p_clear}\s+(\w+)$": "cmd_clear",
-            rf"{prefix}{p_pompa}(?:\s+(\w+)(?:\s+(\d+))?)?$": "cmd_pump",
-            rf"{prefix}{a_blacklist}\s+(\w+)$": "cmd_blacklist",
-            rf"{prefix}{a_unblacklist}\s+(\w+)$": "cmd_unblacklist",
-            rf"{prefix}{a_blacklist_list}$": "cmd_blacklist_list",
-            rf"{prefix}{a_skip}$": "cmd_skip",
-            rf"{prefix}{a_skip_alias}$": "cmd_skip",
-            rf"{prefix}{a_trust_channel}\s+(.+)$": "cmd_trust_channel",
-            rf"{prefix}{a_untrust_channel}\s+(\w+)$": "cmd_untrust_channel",
-            rf"{prefix}{a_trusted_channels_list}$": "cmd_trusted_channels_list",
-            rf"{prefix}{a_remove_queue}\s+(\d+)$": "cmd_remove_queue",
-            rf"{prefix}{a_clear_queue}$": "cmd_clear_queue",
-            rf"{prefix}{stat_stats}$": "cmd_stats",
-            rf"{prefix}{stat_top_songs}(?:\s+(\d+))?$": "cmd_top_songs",
-            rf"{prefix}{stat_top_users}(?:\s+(\d+))?$": "cmd_top_users",
-            rf"{prefix}{mus_volume}\s+(\d+)$": "cmd_volume",
-           rf"{prefix}{mus_pause}$": "cmd_pause",
-            rf"{prefix}{mus_resume}$": "cmd_resume",
-            rf"{prefix}{mus_repeat}(?:\s+(\d+))?$": "cmd_repeat",
-            rf"{prefix}{mus_repeat_off}$": "cmd_repeat_off",
-           rf"{prefix}{mus_next}$": "cmd_next",
-            rf"{prefix}{mus_queue_info}$": "cmd_queue_info",
-            rf"{prefix}{mus_duration}\s+(.+)$": "cmd_duration",
-            rf"{prefix}{mus_when}$": "cmd_when",
-            rf"{prefix}{mus_random}(?:\s+(\d+))?$": "cmd_random",
-            rf"{prefix}{mus_ops}$": "cmd_ops",
-            rf"{prefix}{stat_storia}(?:\s+(\d+))?$": "cmd_history",
-            rf"{prefix}{util_help}(?:\s+(\w+))?$": "cmd_help",
-            rf"{prefix}{util_version}$": "cmd_version",
-            rf"{prefix}{util_uptime}$": "cmd_uptime",
-            rf"{prefix}{vote_skip}$": "cmd_vote",
-        }
-
-        self.compiled_commands: list[CompiledPattern] = [
-            CompiledPattern(pattern, method) for pattern, method in raw_patterns.items()
+        self._commands: list[tuple[re.Pattern, callable, bool]] = [
+            (re.compile(rf"{prefix}{sr_prefix}\s+(.+)$", re.IGNORECASE), h_create, False),  # placeholder, never hit (sr goes to callback)
+        ]
+        # Overwrite with actual commands
+        self._commands = [
+            (re.compile(rf"{prefix}{p_create}\s+(\w+)$", re.IGNORECASE), h_create, False),
+            (re.compile(rf"{prefix}{p_view}(?:\s+(\w+)(?:\s+(\d+))?)?$", re.IGNORECASE), h_playlist, False),
+            (re.compile(rf"{prefix}{p_add}\s+(\w+)\s+(.+)$", re.IGNORECASE), h_add, False),
+            (re.compile(rf"{prefix}{p_remove}\s+(\w+)\s+(.+)$", re.IGNORECASE), h_remove, False),
+            (re.compile(rf"{prefix}{p_move}\s+(\w+)\s+(\d+)\s+(\d+)$", re.IGNORECASE), h_move, False),
+            (re.compile(rf"{prefix}{p_clear}\s+(\w+)$", re.IGNORECASE), h_clear, False),
+            (re.compile(rf"{prefix}{p_pompa}(?:\s+(\w+)(?:\s+(\d+))?)?$", re.IGNORECASE), h_pump, False),
+            (re.compile(rf"{prefix}{a_blacklist}\s+(\w+)$", re.IGNORECASE), h_blacklist, True),
+            (re.compile(rf"{prefix}{a_unblacklist}\s+(\w+)$", re.IGNORECASE), h_unblacklist, True),
+            (re.compile(rf"{prefix}{a_blacklist_list}$", re.IGNORECASE), h_blacklist_list, True),
+            (re.compile(rf"{prefix}{a_skip}$", re.IGNORECASE), h_skip, True),
+            (re.compile(rf"{prefix}{a_skip_alias}$", re.IGNORECASE), h_skip, True),
+            (re.compile(rf"{prefix}{a_trust_channel}\s+(.+)$", re.IGNORECASE), h_trust_channel, True),
+            (re.compile(rf"{prefix}{a_untrust_channel}\s+(\w+)$", re.IGNORECASE), h_untrust_channel, True),
+            (re.compile(rf"{prefix}{a_trusted_channels_list}$", re.IGNORECASE), h_trusted_channels_list, True),
+            (re.compile(rf"{prefix}{a_remove_queue}\s+(\d+)$", re.IGNORECASE), h_remove_queue, True),
+            (re.compile(rf"{prefix}{a_clear_queue}$", re.IGNORECASE), h_clear_queue, True),
+            (re.compile(rf"{prefix}{stat_stats}$", re.IGNORECASE), h_stats, False),
+            (re.compile(rf"{prefix}{stat_top_songs}(?:\s+(\d+))?$", re.IGNORECASE), h_top_songs, False),
+            (re.compile(rf"{prefix}{stat_top_users}(?:\s+(\d+))?$", re.IGNORECASE), h_top_users, False),
+            (re.compile(rf"{prefix}{stat_storia}(?:\s+(\d+))?$", re.IGNORECASE), h_history, False),
+            (re.compile(rf"{prefix}{mus_volume}\s+(\d+)$", re.IGNORECASE), h_volume, True),
+            (re.compile(rf"{prefix}{mus_pause}$", re.IGNORECASE), h_pause, True),
+            (re.compile(rf"{prefix}{mus_resume}$", re.IGNORECASE), h_resume, True),
+            (re.compile(rf"{prefix}{mus_repeat}(?:\s+(\d+))?$", re.IGNORECASE), h_repeat, True),
+            (re.compile(rf"{prefix}{mus_repeat_off}$", re.IGNORECASE), h_repeat_off, True),
+            (re.compile(rf"{prefix}{mus_next}$", re.IGNORECASE), h_next, False),
+            (re.compile(rf"{prefix}{mus_queue_info}$", re.IGNORECASE), h_queue_info, False),
+            (re.compile(rf"{prefix}{mus_duration}\s+(.+)$", re.IGNORECASE), h_duration, False),
+            (re.compile(rf"{prefix}{mus_when}$", re.IGNORECASE), h_when, False),
+            (re.compile(rf"{prefix}{mus_random}(?:\s+(\d+))?$", re.IGNORECASE), h_random, False),
+            (re.compile(rf"{prefix}{mus_ops}$", re.IGNORECASE), h_ops, False),
+            (re.compile(rf"{prefix}{util_help}(?:\s+(\w+))?$", re.IGNORECASE), h_help, False),
+            (re.compile(rf"{prefix}{util_version}$", re.IGNORECASE), h_version, False),
+            (re.compile(rf"{prefix}{util_uptime}$", re.IGNORECASE), h_uptime, False),
+            (re.compile(rf"{prefix}{vote_skip}$", re.IGNORECASE), h_vote, False),
         ]
 
-    def _build_admin_set(self) -> set[str]:
-        """Discover all cmd_* methods decorated with @admin_required."""
-        admin_set: set[str] = set()
-        for name in dir(self):
-            if name.startswith("cmd_"):
-                attr = getattr(self, name)
-                if callable(attr) and getattr(attr, "_requires_admin", False):
-                    admin_set.add(name)
-        return admin_set
-
     def _is_admin(self, username: str) -> bool:
-        """Checks if a user has admin permissions."""
-        return username.lower() in [u.lower() for u in ADMIN_USERS]
+        """Checks if a user has admin permissions. ADMIN_USERS is already lowercase."""
+        return username.lower() in ADMIN_USERS
 
     async def process(self, text: str, username: str, channel_id: str) -> bool:
         """Processes a chat message and responds if it is a command."""
         text_lower = text.lower().strip()
 
-        for compiled in self.compiled_commands:
-            match = compiled.regex.match(text_lower)
-
+        for pattern, handler, needs_admin in self._commands:
+            match = pattern.match(text_lower)
             if match:
-                method_name = compiled.method_name
-                method = getattr(self, method_name, None)
+                if needs_admin and not self._is_admin(username):
+                    await self._send_public(channel_id, "⛔ You don't have permission to use this command.")
+                    return True
 
-                if method:
-                    # Check permissions for admin commands (discovered via @admin_required)
-                    if method_name in self._admin_methods and not self._is_admin(username):
-                        await self._send_public(channel_id, "⛔ You don't have permission to use this command.")
+                try:
+                    response = await handler(list(match.groups()), username, channel_id)
+                    if response:
+                        await self._send_response(response, channel_id)
                         return True
-
-                    args = list(match.groups())
-                    args.append(username)
-                    args.append(channel_id)
-
+                except Exception as e:
+                    import traceback
+                    logger.error(f"Error in command: {e}\n" + traceback.format_exc())
                     try:
-                        response = await method(*args)
-                        if response:
-                            await self._send_response(response, channel_id)
-                            return True
-                    except Exception as e:
-                        import traceback
-
-                        logger.error(
-                            f"Error in command {method_name}: {e}\n"
-                            + traceback.format_exc()
-                        )
-                        try:
-                            await self._send_public(
-                                channel_id,
-                                f"❌ Internal error ({type(e).__name__}: {e})",
-                            )
-                        except Exception:
-                            pass
-
+                        await self._send_public(channel_id, f"❌ Internal error ({type(e).__name__}: {e})")
+                    except Exception:
+                        pass
         return False
 
     async def _send_response(self, response, channel_id: str):
@@ -223,267 +394,5 @@ class CommandProcessor:
 
     async def _send_public(self, channel_id: str, message: str):
         """Sends public message via Twitch."""
-        if self.services.bot and hasattr(self.services.bot, "chat_message"):
-            await self.services.bot.chat_message.send_public(channel_id, message)
-
-    # =====================================================================
-    # PLAYLIST COMMANDS
-    # =====================================================================
-
-    async def cmd_create(self, playlist_name: str, username: str, channel_id: str):
-        """!create <name> - Creates a new playlist."""
-        return await self.services.playlist_commands.cmd_create(username, playlist_name)
-
-    async def cmd_playlist(self, nome: Optional[str], page_str: Optional[str], username: str, channel_id: str):
-        """!playlist [nome] [pagina] - Mostra playlist o canzoni."""
-        page = int(page_str) if page_str else 1
-        if nome is None:
-            nome = None
-            page = 1
-        return await self.services.playlist_commands.cmd_playlist(username, nome, page)
-
-    async def cmd_add(
-        self, playlist_name: str, query: str, username: str, channel_id: str
-    ):
-        """!add <playlist> <song> - Add song to playlist.
-
-        Searches /downloads/ for a matching file using the same word-boundary
-        regex as MusicDownloader._find_matching_file(). If found, stores the
-        real path so pompa/playback can use it directly without re-searching.
-        """
-        # Try to find a local file matching the query
-        file_path = "unknown"
-        if self.services.music_downloader:
-            local_match = self.services.music_downloader._find_matching_file(query)
-            if local_match:
-                file_path = local_match
-
-        return await self.services.playlist_commands.cmd_add(
-            username, playlist_name, query, file_path, username
-        )
-
-    async def cmd_remove(
-        self, playlist_name: str, index_or_name: str, username: str, channel_id: str
-    ):
-        """!remove <playlist> <position> - Remove song."""
-        return await self.services.playlist_commands.cmd_remove(
-            username, playlist_name, index_or_name
-        )
-
-    async def cmd_move(
-        self, playlist_name: str, num1: str, num2: str, username: str, channel_id: str
-    ):
-        """!move <playlist> <pos1> <pos2> - Move songs."""
-        return await self.services.playlist_commands.cmd_move(
-            username, playlist_name, num1, num2
-        )
-
-    async def cmd_clear(self, playlist_name: str, username: str, channel_id: str):
-        """!clear <playlist> - Clear playlist."""
-        return await self.services.playlist_commands.cmd_clear(username, playlist_name)
-
-    async def cmd_pump(
-        self, playlist_name: Optional[str], n_str: Optional[str], username: str, channel_id: str
-    ):
-        """!pump [playlist] [n] - Pump N random songs from a playlist."""
-        n = int(n_str) if n_str else 5
-        return await self.services.playlist_commands.cmd_pump(username, playlist_name, n, channel_id)
-
-    # =====================================================================
-    # ADMIN COMMANDS
-    # =====================================================================
-
-    @admin_required
-    async def cmd_blacklist(self, target_user: str, username: str, channel_id: str):
-        """!blacklist <utente> - Aggiungi blacklist."""
-        return await self.services.admin_commands.cmd_blacklist(username, target_user)
-
-    @admin_required
-    async def cmd_unblacklist(self, target_user: str, username: str, channel_id: str):
-        """!unblacklist <utente> - Rimuovi blacklist."""
-        return await self.services.admin_commands.cmd_unblacklist(username, target_user)
-
-    @admin_required
-    async def cmd_blacklist_list(self, username: str, channel_id: str):
-        """!blacklist_list - Mostra blacklist."""
-        return await self.services.admin_commands.cmd_blacklist_list(username)
-
-    @admin_required
-    async def cmd_skip(self, username: str, channel_id: str):
-        """!skip - Skip song."""
-        return await self.services.admin_commands.cmd_skip(username)
-
-    @admin_required
-    async def cmd_trust_channel(self, query_or_url: str, username: str, channel_id: str):
-        """!trust_channel <query_or_url> - Add YouTube channel to whitelist."""
-        return await self.services.admin_commands.cmd_trust_channel(username, query_or_url)
-
-    @admin_required
-    async def cmd_untrust_channel(self, channel_id_arg: str, username: str, channel_id: str):
-        """!untrust_channel <channel_id> - Remove YouTube channel from whitelist."""
-        return await self.services.admin_commands.cmd_untrust_channel(username, channel_id_arg)
-
-    @admin_required
-    async def cmd_trusted_channels_list(self, username: str, channel_id: str):
-        """!trusted_channels - Show trusted YouTube channels."""
-        return await self.services.admin_commands.cmd_trusted_channels_list(username)
-
-    @admin_required
-    async def cmd_remove_queue(self, position: str, username: str, channel_id: str):
-        """!remove_queue <pos> - Remove from queue."""
-        return await self.services.admin_commands.cmd_remove_queue(username, position)
-
-    @admin_required
-    async def cmd_clear_queue(self, username: str, channel_id: str):
-        """!clear_queue - Clear queue."""
-        return await self.services.admin_commands.cmd_clear_queue(username)
-
-    # =====================================================================
-    # ANALYTICS COMMANDS
-    # =====================================================================
-
-    async def cmd_stats(self, username: str, channel_id: str):
-        """!stats - Statistics."""
-        return await self.services.analytics_commands.cmd_stats(username)
-
-    async def cmd_top_songs(self, n: str, username: str, channel_id: str):
-        """!top_songs [N] - Top songs."""
-        n = int(n) if n else 10
-        return await self.services.analytics_commands.cmd_top_songs(username, n)
-
-    async def cmd_top_users(self, n: str, username: str, channel_id: str):
-        """!top_users [N] - Top users."""
-        n = int(n) if n else 10
-        return await self.services.analytics_commands.cmd_top_users(username, n)
-
-    # =====================================================================
-    # MUSIC COMMANDS
-    # =====================================================================
-
-
-
-    @admin_required
-    async def cmd_pause(self, username: str, channel_id: str):
-        """!pause - Pause (admin only)."""
-        return await self.services.music_commands.cmd_pause(username)
-
-    @admin_required
-    async def cmd_resume(self, username: str, channel_id: str):
-        """!resume - Resume (admin only)."""
-        return await self.services.music_commands.cmd_resume(username)
-
-    # =====================================================================
-    # ADMIN COMMANDS (repeat/volume moved here for permission control)
-    # =====================================================================
-
-    @admin_required
-    async def cmd_repeat(self, count: str, username: str, channel_id: str):
-        """!repeat [N] - Repeat song (N=1 or empty=infinite). Admin only."""
-        if count is None:
-            # No argument: infinite repeat
-            return await self.services.music_commands.cmd_repeat(username, -1)
-        else:
-            count = int(count)
-            if count == 0:
-                return await self.services.music_commands.cmd_repeat_off(username)
-            return await self.services.music_commands.cmd_repeat(username, count)
-
-    @admin_required
-    async def cmd_repeat_off(self, username: str, channel_id: str):
-        """!repeat_off - Disable repeat. Admin only."""
-        return await self.services.music_commands.cmd_repeat_off(username)
-
-    @admin_required
-    async def cmd_volume(self, level: str, username: str, channel_id: str):
-        """!volume <0-100> - Set volume (admin)."""
-        level = int(level)
-        return await self.services.music_commands.cmd_volume(username, level)
-
-    async def cmd_next(self, username: str, channel_id: str):
-        """!next - Next song."""
-        return await self.services.music_commands.cmd_next(username)
-
-    async def cmd_queue_info(self, username: str, channel_id: str):
-        """!queue_info - Queue info."""
-        return await self.services.utility_commands.cmd_queue_info(username, channel_id)
-
-    async def cmd_duration(self, query: str, username: str, channel_id: str):
-        """!duration <song> - Song duration."""
-        return await self.services.music_commands.cmd_duration(username, query)
-
-    async def cmd_when(self, username: str, channel_id: str):
-        """!when - Estimate when your next song will play."""
-        return await self.services.music_commands.cmd_when(username, channel_id)
-
-    async def cmd_random(self, n_str: Optional[str], username: str, channel_id: str):
-        """!random [N] - Play N random songs from library."""
-        n = int(n_str) if n_str else 1
-        return await self.services.music_commands.cmd_random(username, n)
-
-    async def cmd_ops(self, username: str, channel_id: str):
-        """!ops - Remove the last song you added from the queue."""
-        return await self.services.music_commands.cmd_ops(username)
-
-    async def cmd_history(self, n_str: Optional[str], username: str, channel_id: str):
-        """!history [N] - History of last N songs played."""
-        n = int(n_str) if n_str else 10
-        return await self.services.analytics_commands.cmd_history(username, n)
-
-    # =====================================================================
-    # UTILITY COMMANDS
-    # =====================================================================
-
-    async def cmd_help(self, *args):
-        """!help [command] - Robust argument handling."""
-        logger.debug(f"cmd_help called with args: {args}")
-
-        if len(args) >= 3:
-            captured_command, username, channel_id = args[0], args[1], args[2]
-        elif len(args) == 2:
-            captured_command, username, channel_id = "", args[0], args[1]
-        else:
-            captured_command, username, channel_id = "", "unknown", "unknown"
-
-        if captured_command is None:
-            captured_command = ""
-
-        if captured_command and captured_command.lower() == username.lower():
-            captured_command = ""
-
-        logger.debug(
-            f"Calling utility.cmd_help with username={username}, command='{captured_command}'"
-        )
-
-        return await self.services.utility_commands.cmd_help(username, captured_command)
-
-    async def cmd_version(self, username: str, channel_id: str):
-        """!version - Bot version."""
-        return await self.services.utility_commands.cmd_version(username)
-
-    async def cmd_uptime(self, username: str, channel_id: str):
-        """!uptime - Uptime."""
-        bot = self.services.bot
-        if not bot or not hasattr(bot, "_start_time"):
-            return await self.services.utility_commands.cmd_uptime(username)
-        elapsed = time.time() - bot._start_time
-        days = int(elapsed // 86400)
-        hours = int((elapsed % 86400) // 3600)
-        minutes = int((elapsed % 3600) // 60)
-        seconds = int(elapsed % 60)
-        parts: list[str] = []
-        if days > 0:
-            parts.append(f"{days}d")
-        if hours > 0:
-            parts.append(f"{hours}h")
-        if minutes > 0 or len(parts) == 0:
-            parts.append(f"{minutes}m")
-        parts.append(f"{seconds}s")
-        return f"⏱️ Bot has been running for: {' '.join(parts)}"
-
-    # =====================================================================
-    # VOTE TO SKIP
-    # =====================================================================
-
-    async def cmd_vote(self, username: str, channel_id: str):
-        """!vote - Vote to skip the current song."""
-        return await self.services.music_commands.cmd_vote(username)
+        if self.bot and hasattr(self.bot, "twitch_handler"):
+            await self.bot.twitch_handler.send_message(channel_id, message)

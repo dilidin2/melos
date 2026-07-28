@@ -81,25 +81,4 @@ class QueuePersistence:
             return None
 
 
-class SongRequestPersistence:
-    """Manages song-specific persistence (file validation)."""
-
-    def __init__(self, downloads_dir: str = "downloads"):
-        self.downloads_dir = Path(downloads_dir)
-
-    async def validate_song_exists(self, query: str, username: str) -> bool:
-        """Validates that a restored song still exists in the filesystem."""
-        import re
-
-        sanitized = re.sub(r"[^\w\s\-]", "", query)
-        sanitized = re.sub(r"\s+", " ", sanitized).strip()
-
-        for ext in [".mp3", ".m4a", ".webm"]:
-            expected_path = self.downloads_dir / f"{username} - {sanitized}{ext}"
-
-            if await asyncio.to_thread(expected_path.exists):
-                logger.info(f"Song verified: {query}")
-                return True
-
-        logger.warning(f"Song file not found: {query} from @{username}")
-        return False
+# SongRequestPersistence deleted — validate_song_exists() was never called anywhere.

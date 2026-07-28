@@ -12,7 +12,6 @@ import re
 import subprocess
 import threading
 import time
-import random
 from typing import TYPE_CHECKING, Optional, Dict, Any
 import yt_dlp
 from loguru import logger
@@ -482,46 +481,6 @@ class MusicDownloader:
             return None
 
         return {"channel_id": channel_id, "channel_name": channel_name}
-
-    def get_random_downloaded_file(self) -> Optional[str]:
-        """Selects a random audio file from the download folder."""
-        try:
-            files = os.listdir(DOWNLOAD_DIR)
-            audio_files = [
-                f for f in files if f.lower().endswith((".mp3", ".wav", ".m4a"))
-            ]
-            if not audio_files:
-                return None
-
-            random_file = random.choice(audio_files)
-            return os.path.join(DOWNLOAD_DIR, random_file)
-        except Exception as e:
-            logger.error(f"Error while selecting random file: {e}")
-            return None
-
-    def get_search_results(
-        self, query: str, max_results: int = 5
-    ) -> list[Dict[str, str]]:
-        """Searches for songs and returns a list of results."""
-        search_query = f"ytsearch{max_results}:{query}"
-        results = []
-
-        try:
-            with yt_dlp.YoutubeDL(self._get_info_opts()) as ydl:
-                info = ydl.extract_info(search_query, download=False)
-                if info and "entries" in info:
-                    for entry in info["entries"]:
-                        results.append(
-                            {
-                                "title": entry.get("title", ""),
-                                "url": entry.get("url", ""),
-                                "duration": entry.get("duration", 0),
-                            }
-                        )
-        except Exception as e:
-            logger.error(f"Error in search for '{query}': {e}")
-
-        return results
 
     def _get_local_file_duration(self, file_path: str) -> Optional[int]:
         """Gets the duration of a local audio file using ffprobe."""

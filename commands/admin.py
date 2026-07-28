@@ -127,20 +127,6 @@ class AdminCommands:
         return f"🗑️ Removed **{title}** from queue (position {pos})"
 
     @admin_required
-    async def cmd_volume(self, username: str, level: int) -> str:
-        """!volume <0-100> - Set or show current volume."""
-        if level < 0 or level > 100:
-            return "❌ Volume level must be between 0 and 100."
-
-        if self.audio_player:
-            pygame_volume = level / 100.0
-            import pygame
-            pygame.mixer.music.set_volume(pygame_volume)
-            logger.info(f"Volume set to {level}% by @{username}")
-
-        return f"🔊 Volume set to {level}%"
-
-    @admin_required
     async def cmd_clear_queue(self, username: str) -> str:
         """!clear_queue - Completely clears the queue.
 

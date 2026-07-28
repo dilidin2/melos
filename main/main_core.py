@@ -27,7 +27,7 @@ from main.music_downloader import (
 from main.audio_player import AudioPlayer
 from main.twitch_handler import TwitchHandler
 from main.chat_message import ChatMessage
-from main.queue_persistence import QueuePersistence, SongRequestPersistence
+from main.queue_persistence import QueuePersistence
 
 from loguru import logger
 
@@ -191,8 +191,6 @@ class SongRequestBot:
         self.executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
         self.queue_persistence = QueuePersistence()
-        self.song_request_persistence = SongRequestPersistence()
-
         # Bot start time for uptime tracking
         self._start_time = time.time()
 
@@ -340,13 +338,12 @@ class SongRequestBot:
                         )
                         return False
 
-                    # Use the disk filename as cache key (not the user's query),
-                    # so different queries for the same song find the cached file
-                    # on the second attempt.
+                    # Use the disk filename as normalized cache key.
+                    # Only one entry per file — the filename is already
+                    # normalized (lowercase, no special chars), so "Bella Ciao"
+                    # and "bella ciao" map to the same cached file.
                     cache_key = os.path.splitext(os.path.basename(file_path))[0]
                     self.duplicate_cache.add(cache_key, file_path, request.username)
-                    # Also add the original query for immediate hit
-                    self.duplicate_cache.add(request.query, file_path, request.username)
 
                 except _SongTooLongError as e:
                     logger.warning(
@@ -443,6 +440,37 @@ class SongRequestBot:
         finally:
             self.request_queue._in_progress = False
 
+    def _should_repeat(self, success: bool, song_name: str) -> bool:
+        """Check repeat state after playback. Returns True if the song should replay.
+
+        Shared by queue and random-song branches to avoid duplicating
+        the infinite/count/off repeat logic.
+        """
+        if not success:
+            if self.repeat_mode != 'off':
+                logger.warning(f"Playback failed, disabling repeat")
+                self.repeat_mode = 'off'
+                self.repeat_remaining = 0
+            return False
+
+        if self.repeat_mode == 'infinite':
+            logger.info(f"🔁 INFINITE repeat: repeating '{song_name}'")
+            return True
+
+        if self.repeat_mode == 'count':
+            self.repeat_remaining -= 1
+            if self.repeat_remaining > 0:
+                logger.info(
+                    f"🔁 Repeat ({self.repeat_remaining}/{self.repeat_count}): "
+                    f"repeating '{song_name}'"
+                )
+                return True
+            self.repeat_mode = 'off'
+            logger.info(f"🔁 Repeat ended after {self.repeat_count} times")
+            return False
+
+        return False
+
     async def _queue_processor(self):
         """Continuously processes the request queue."""
         while not self._shutdown_event.is_set() or self.request_queue.qsize() > 0:
@@ -465,37 +493,7 @@ class SongRequestBot:
 
                 while True:  # ← inner loop for repeat
                     success = await self._process_request(repeat_target)
-                    # task_done() chiamato una sola volta per la richiesta originale
-
-                    if not success:
-                        if self.repeat_mode != 'off':
-                            logger.warning(f"Playback failed, disabling repeat")
-                            self.repeat_mode = 'off'
-                            self.repeat_remaining = 0
-                        await self._persist_queue()
-                        break
-
-                    # Gestione repeat
-                    if self.repeat_mode == 'infinite':
-                        logger.info(f"🔁 INFINITE repeat: repeating '{repeat_target.query}'")
-                        # Does NOT re-queue, restarts the inner while
-                        continue
-
-                    elif self.repeat_mode == 'count':
-                        self.repeat_remaining -= 1
-                        if self.repeat_remaining > 0:
-                            logger.info(
-                                f"🔁 Repeat ({self.repeat_remaining}/{self.repeat_count}): "
-                                f"repeating '{repeat_target.query}'"
-                            )
-                            continue  # replay immediato, nessun'altra canzone si intromette
-                        else:
-                            self.repeat_mode = 'off'
-                            logger.info(f"🔁 Repeat ended after {self.repeat_count} times")
-                            await self._persist_queue()
-                            break
-                    else:
-                        # repeat_mode == 'off'
+                    if not self._should_repeat(success, repeat_target.query):
                         await self._persist_queue()
                         break
 
@@ -529,41 +527,14 @@ class SongRequestBot:
                         random_file = os.path.join(DOWNLOAD_DIR, selected)
                         song_name = os.path.splitext(selected)[0]
 
-                        # Repeat inner loop — same logic as queue branch
+                        self.reset_votes()
+                        self._vote_active = True
                         while True:
                             notification = f"Playing random: {song_name}"
-                            self.reset_votes()
-                            self._vote_active = True
                             success = await self._play_audio_file(
                                 TARGET_CHANNEL, random_file, notification
                             )
-
-                            if not success:
-                                if self.repeat_mode != 'off':
-                                    logger.warning(f"Playback failed, disabling repeat")
-                                    self.repeat_mode = 'off'
-                                    self.repeat_remaining = 0
-                                break
-
-                            # Gestione repeat
-                            if self.repeat_mode == 'infinite':
-                                logger.info(f"🔁 INFINITE repeat: repeating random '{song_name}'")
-                                continue
-
-                            elif self.repeat_mode == 'count':
-                                self.repeat_remaining -= 1
-                                if self.repeat_remaining > 0:
-                                    logger.info(
-                                        f"🔁 Repeat ({self.repeat_remaining}/{self.repeat_count}): "
-                                        f"repeating random '{song_name}'"
-                                    )
-                                    continue
-                                else:
-                                    self.repeat_mode = 'off'
-                                    logger.info(f"🔁 Repeat ended after {self.repeat_count} times")
-                                    break
-                            else:
-                                # repeat_mode == 'off' — normal flow
+                            if not self._should_repeat(success, song_name):
                                 break
 
                         # Record random song in analytics

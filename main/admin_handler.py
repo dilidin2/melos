@@ -97,43 +97,47 @@ class AdminHandler:
 
     def add_whitelist(self, username: str) -> bool:
         """Adds a user to the whitelist."""
-        if username.lower() not in [u.lower() for u in self._whitelist]:
-            self._whitelist.add(username.lower())
+        lowered = username.lower()
+        if lowered not in self._whitelist:
+            self._whitelist.add(lowered)
             self._save_whitelist()
             return True
         return False
 
     def remove_whitelist(self, username: str) -> bool:
         """Removes a user from the whitelist."""
-        if username.lower() in [u.lower() for u in self._whitelist]:
-            self._whitelist.discard(username.lower())
+        lowered = username.lower()
+        if lowered in self._whitelist:
+            self._whitelist.discard(lowered)
             self._save_whitelist()
             return True
         return False
 
     def add_blacklist(self, username: str) -> bool:
         """Adds a user to the blacklist."""
-        if username.lower() not in [u.lower() for u in self._blacklist]:
-            self._blacklist.add(username.lower())
+        lowered = username.lower()
+        if lowered not in self._blacklist:
+            self._blacklist.add(lowered)
             self._save_blacklist()
             return True
         return False
 
     def remove_blacklist(self, username: str) -> bool:
         """Removes a user from the blacklist."""
-        if username.lower() in [u.lower() for u in self._blacklist]:
-            self._blacklist.discard(username.lower())
+        lowered = username.lower()
+        if lowered in self._blacklist:
+            self._blacklist.discard(lowered)
             self._save_blacklist()
             return True
         return False
 
     def is_whitelisted(self, username: str) -> bool:
         """Checks if a user is on the whitelist."""
-        return username.lower() in [u.lower() for u in self._whitelist]
+        return username.lower() in self._whitelist
 
     def is_blacklisted(self, username: str) -> bool:
         """Checks if a user is on the blacklist."""
-        return username.lower() in [u.lower() for u in self._blacklist]
+        return username.lower() in self._blacklist
 
     def get_whitelist_list(self) -> list[str]:
         """Gets the list of whitelisted users."""
