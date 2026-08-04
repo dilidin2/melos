@@ -143,29 +143,57 @@ class PlaylistCommands:
         if not songs:
             return f"❌ Playlist '{playlist_name}' not found or empty."
 
+        # Try to find/download each song; remove from playlist if not available
+        from main.music_downloader import (
+            _SongTooLongError,
+            _CategoryError,
+            _NoValidCandidateError,
+            _ChannelNotTrustedError,
+        )
+        queued: list[PlaylistSong] = []
+        removed_queries: list[str] = []
         for song in songs:
-            request_id = self.request_queue._request_counter
-            self.request_queue._request_counter += 1
-            from main.main_core import SongRequest
+            try:
+                path = self.bot.music_downloader.download(song.query)
+            except (_SongTooLongError, _CategoryError, _NoValidCandidateError, _ChannelNotTrustedError):
+                path = None
+            if not path:
+                self.playlist_manager.remove_song_from_playlist(
+                    username, playlist_name, song.query
+                )
+                removed_queries.append(song.query)
+            else:
+                # Update file_path in playlist if it was unknown
+                if song.file_path == "unknown" or song.file_path != path:
+                    playlist = self.playlist_manager.get_playlist_by_name(username, playlist_name)
+                    if playlist:
+                        for s in playlist.songs:
+                            if s.query == song.query:
+                                s.file_path = path
+                        self.playlist_manager._save_user_playlists(username)
 
-            # If the song has a known file_path (from !add with local search),
-            # use it directly as the query so download() returns it instantly
-            # without any YouTube or disk search.
-            import os
-            effective_query = song.query
-            if song.file_path != "unknown" and os.path.isfile(song.file_path):
-                effective_query = song.file_path
+                request_id = self.request_queue._request_counter
+                self.request_queue._request_counter += 1
+                from main.main_core import SongRequest
+                request = SongRequest(
+                    query=path,
+                    username=username,
+                    channel_id=channel_id,
+                    request_id=request_id,
+                )
+                await self.request_queue.put(request)
+                queued.append(song)
 
-            request = SongRequest(
-                query=effective_query,
-                username=username,
-                channel_id=channel_id,
-                request_id=request_id,
-            )
-            await self.request_queue.put(request)
+        if not queued:
+            msg = f"No songs available in '{playlist_name}'."
+            if removed_queries:
+                msg += f" Removed {len(removed_queries)} unavailable song(s): {', '.join(removed_queries)}"
+            return f"❌ {msg}"
 
-        lines = [f"🚰 Pumped {len(songs)} songs from '{playlist_name}':"]
-        for i, song in enumerate(songs, 1):
+        lines = [f"🚰 Pumped {len(queued)} songs from '{playlist_name}':"]
+        for i, song in enumerate(queued, 1):
             lines.append(f"  {i}. {song.query} (@{song.username_original})")
+        if removed_queries:
+            lines.append(f"🗑️ Removed {len(removed_queries)} unavailable song(s): {', '.join(removed_queries)}")
 
         return "\n".join(lines)

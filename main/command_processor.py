@@ -26,6 +26,7 @@ from main.config import (
     ADMIN_TRUSTED_CHANNELS_LIST_COMMAND,
     ADMIN_REMOVE_QUEUE_COMMAND,
     ADMIN_CLEAR_QUEUE_COMMAND,
+    ADMIN_DELETE_COMMAND,
     ANALYTICS_STATS_COMMAND,
     ANALYTICS_TOP_SONGS_COMMAND,
     ANALYTICS_TOP_USERS_COMMAND,
@@ -104,13 +105,41 @@ class CommandProcessor:
 
         @cmd
         async def h_add(g, u, c):
-            playlist_name, query = g[0], g[1]
-            file_path = "unknown"
-            if self._downloader:
-                local_match = self._downloader._find_matching_file(query)
-                if local_match:
-                    file_path = local_match
-            return await self._playlist.cmd_add(u, playlist_name, query, file_path, u)
+            playlist_name = g[0]
+            raw = g[1]
+
+            songs = [s.strip() for s in raw.split(",") if s.strip()]
+            if not songs:
+                return "❌ No songs provided."
+
+            playlist = self._playlist.playlist_manager.get_playlist_by_name(u, playlist_name)
+            if not playlist:
+                return f"❌ Playlist '{playlist_name}' not found."
+
+            added = []
+            failed = []
+            for song in songs:
+                fp = "unknown"
+                if self._downloader:
+                    match = self._downloader._find_matching_file(song)
+                    if match:
+                        fp = match
+                result = await self._playlist.cmd_add(u, playlist_name, song, fp, u)
+                if "✅" in result:
+                    added.append(song)
+                else:
+                    failed.append(song)
+
+            if not added:
+                return "❌ Couldn't add any songs."
+            elif not failed:
+                return f"✅ Added {len(added)} song(s) to '{playlist_name}'!"
+            else:
+                if len(failed) > 5:
+                    failed_list = ", ".join(failed[:5]) + f" and {len(failed) - 5} more"
+                else:
+                    failed_list = ", ".join(failed)
+                return f"✅ Added {len(added)} song(s), but couldn't add: {failed_list}"
 
         @cmd
         async def h_remove(g, u, c):
@@ -164,6 +193,10 @@ class CommandProcessor:
         @cmd
         async def h_clear_queue(g, u, c):
             return await self._admin.cmd_clear_queue(u)
+
+        @cmd
+        async def h_delete(g, u, c):
+            return await self._admin.cmd_delete(u, g[0])
 
         @cmd
         async def h_stats(g, u, c):
@@ -287,6 +320,7 @@ class CommandProcessor:
         a_trusted_channels_list = re.escape(ADMIN_TRUSTED_CHANNELS_LIST_COMMAND)
         a_remove_queue = re.escape(ADMIN_REMOVE_QUEUE_COMMAND)
         a_clear_queue = re.escape(ADMIN_CLEAR_QUEUE_COMMAND)
+        d_delete = re.escape(ADMIN_DELETE_COMMAND)
         stat_stats = re.escape(ANALYTICS_STATS_COMMAND)
         stat_top_songs = re.escape(ANALYTICS_TOP_SONGS_COMMAND)
         stat_top_users = re.escape(ANALYTICS_TOP_USERS_COMMAND)
@@ -329,6 +363,7 @@ class CommandProcessor:
             (re.compile(rf"{prefix}{a_trusted_channels_list}$", re.IGNORECASE), h_trusted_channels_list, True),
             (re.compile(rf"{prefix}{a_remove_queue}\s+(\d+)$", re.IGNORECASE), h_remove_queue, True),
             (re.compile(rf"{prefix}{a_clear_queue}$", re.IGNORECASE), h_clear_queue, True),
+            (re.compile(rf"{prefix}{d_delete}\s+(.+)$", re.IGNORECASE), h_delete, True),
             (re.compile(rf"{prefix}{stat_stats}$", re.IGNORECASE), h_stats, False),
             (re.compile(rf"{prefix}{stat_top_songs}(?:\s+(\d+))?$", re.IGNORECASE), h_top_songs, False),
             (re.compile(rf"{prefix}{stat_top_users}(?:\s+(\d+))?$", re.IGNORECASE), h_top_users, False),

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 from loguru import logger
@@ -156,6 +157,23 @@ class AdminCommands:
                 pass
 
         return f"🗑️ Queue cleared: **{count}** songs removed"
+
+    @admin_required
+    async def cmd_delete(self, username: str, query: str) -> str:
+        """!delete <song_name> - Removes a song file from the downloads folder."""
+        if not self.music_downloader:
+            return "❌ Music downloader not available."
+
+        filepath = self.music_downloader._find_matching_file(query)
+        if not filepath:
+            return f"❌ No file found matching '{query}' in downloads."
+
+        try:
+            os.remove(filepath)
+            filename = os.path.basename(filepath)
+            return f"🗑️ Deleted **{filename}** from downloads."
+        except OSError as e:
+            return f"❌ Failed to delete file: {e}"
 
     @admin_required
     async def cmd_trust_channel(

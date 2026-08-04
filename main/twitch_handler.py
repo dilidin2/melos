@@ -232,7 +232,7 @@ class TwitchHandler:
                 "create", "playlist", "add", "remove", "move", "clear", "pump",
                 "blacklist", "unblacklist", "blacklist_list",
                 "trust_channel", "untrust_channel", "trusted_channels",
-                "skip", "remove_queue", "clear_queue",
+                "skip", "remove_queue", "clear_queue", "delete",
                 "stats", "top_songs", "top_users", "history",
                 "volume", "pause", "resume", "repeat", "repeat_off",
                 "next", "queue_info", "duration", "when", "random", "ops",

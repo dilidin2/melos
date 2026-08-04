@@ -112,6 +112,9 @@ PLAYLIST_POMPA_COMMAND: str = "pump"
 # Max songs per pump batch (sliding window)
 MAX_POMPA_SONGS: int = 5
 
+# Cooldown between pump commands (minutes)
+PUMP_COOLDOWN_MINUTES: int = 15
+
 # Admin commands
 ADMIN_BLACKLIST_COMMAND: str = "blacklist"
 ADMIN_UNBLACKLIST_COMMAND: str = "unblacklist"
@@ -124,6 +127,7 @@ ADMIN_TRUSTED_CHANNELS_LIST_COMMAND: str = "trusted_channels"
 
 ADMIN_REMOVE_QUEUE_COMMAND: str = "remove_queue"
 ADMIN_CLEAR_QUEUE_COMMAND: str = "clear_queue"
+ADMIN_DELETE_COMMAND: str = "delete"
 
 # Analytics commands
 ANALYTICS_STATS_COMMAND: str = "stats"

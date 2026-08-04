@@ -36,8 +36,7 @@ class Playlist:
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     last_modified: str = field(default_factory=lambda: datetime.now().isoformat())
     recently_pumped_queries: list[str] = field(default_factory=list)
-    has_pumped: bool = field(default_factory=lambda: False)
-    last_pumped_queries: list[str] = field(default_factory=list)
+    last_pumped_at: Optional[str] = field(default_factory=lambda: None)
 
     def to_dict(self) -> dict:
         return {
@@ -47,6 +46,7 @@ class Playlist:
             "created_at": self.created_at,
             "last_modified": self.last_modified,
             "recently_pumped_queries": self.recently_pumped_queries,
+            "last_pumped_at": self.last_pumped_at,
         }
 
     @classmethod
@@ -59,6 +59,7 @@ class Playlist:
             created_at=data.get("created_at"),
             last_modified=data.get("last_modified"),
             recently_pumped_queries=data.get("recently_pumped_queries", []),
+            last_pumped_at=data.get("last_pumped_at"),
         )
 
 
@@ -294,18 +295,14 @@ class PlaylistManager:
         if len(playlist.songs) == 0:
             return [], "", []
 
-        # If user has pumped before, check if previous songs are still in the queue
-        if playlist.has_pumped:
-            # Check if any of the previously pumped songs are still in the queue
-            still_in_queue = []
-            for query in playlist.last_pumped_queries:
-                # Check if this song is still in the queue
-                if query in playlist.recently_pumped_queries:
-                    still_in_queue.append(query)
-
-            if still_in_queue:
-                # Some songs from previous pump are still in the queue
-                return [], "You can't pump this much!", still_in_queue
+        # Check cooldown
+        from main.config import PUMP_COOLDOWN_MINUTES
+        if playlist.last_pumped_at:
+            last_pumped = datetime.fromisoformat(playlist.last_pumped_at)
+            elapsed = (datetime.now() - last_pumped).total_seconds() / 60
+            if elapsed < PUMP_COOLDOWN_MINUTES:
+                remaining = int(PUMP_COOLDOWN_MINUTES - elapsed)
+                return [], f"⏳ Cooldown active. Try again in {remaining} minutes.", []
 
         # Filter songs not recently pumped
         excluded = set(playlist.recently_pumped_queries)
@@ -320,10 +317,9 @@ class PlaylistManager:
         count = min(n, len(available))
         selected = random.sample(available, count)
 
-        # Update tracking with the selected songs' queries
+        # Update tracking
         playlist.recently_pumped_queries = [s.query for s in selected]
-        playlist.has_pumped = True
-        playlist.last_pumped_queries = [s.query for s in selected]
+        playlist.last_pumped_at = datetime.now().isoformat()
         playlist.last_modified = datetime.now().isoformat()
 
         self._save_user_playlists(username)
