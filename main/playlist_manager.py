@@ -217,7 +217,7 @@ class PlaylistManager:
             for i, song in enumerate(playlist.songs):
                 query_lower = song.query.lower()
                 # Every word must appear as a whole word (word-boundary match)
-                if all(re.search(rf"\b{w}\b", query_lower) for w in words):
+                if all(re.search(rf"\b{re.escape(w)}\b", query_lower) for w in words):
                     playlist.songs.pop(i)
                     playlist.last_modified = datetime.now().isoformat()
                     self._save_user_playlists(username)
