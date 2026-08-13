@@ -1,106 +1,110 @@
-"""Configuration for Twitch Song Request Bot."""
+"""Configuration for Twitch Song Request Bot.
 
+Priority order:
+  1. config.json (primary configuration file)
+  2. Hardcoded default (fallback)
+
+Environment variables are NOT loaded via dotenv — config.json is the source of truth.
+"""
+
+import json
 import os
-from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()
+# ── Load config.json ──
+
+_CONFIG_FILE = Path(__file__).resolve().parent.parent / "config.json"
+_config: dict = {}
+
+if _CONFIG_FILE.exists():
+    try:
+        with open(_CONFIG_FILE, "r", encoding="utf-8") as f:
+            _config = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"[config] Warning: could not load config.json: {e}")
+
+
+def _get(path: str, default=None):
+    """Get a nested value from config.json by dot-separated path."""
+    value = _config
+    for key in path.split("."):
+        if isinstance(value, dict):
+            value = value.get(key)
+        else:
+            return default
+        if value is None:
+            return default
+    return value
+
 
 # ====================
 # TWITCH CONFIGURATION
 # ====================
 
-# Twitch App Client ID — public identifier, not a secret.
-# Used for Device Code Flow (DCF) — no client secret required.
 TWITCH_CLIENT_ID: str = "7uyqomgf325fb3j3bztn9o1p51m85t"
 
-# Twitch channel to connect to (channel name WITHOUT #)
-TARGET_CHANNEL: str = os.getenv("TARGET_CHANNEL", "")
+TARGET_CHANNEL: str = _get("twitch.target_channel", "")
+
+ADMIN_USERS: list[str] = _get("twitch.admin_users", []) or []
 
 # ====================
 # COMMAND CONFIGURATION
 # ====================
 
-# Command prefix for song requests
 CHAT_COMMAND_PREFIX: str = "!"
-
-# Command to request a song
 SONG_REQUEST_COMMAND: str = "sr"
 
 # ====================
 # SONG CONFIGURATION
 # ====================
 
-# Maximum song duration in seconds (15 minutes = 900 seconds)
-MAX_DURATION_SECONDS: int = 900
+MAX_DURATION_SECONDS: int = int(_get("song.max_duration_seconds", 900))
 
-# Desired audio quality (in kbps)
-AUDIO_QUALITY: int = 192
+AUDIO_QUALITY: int = int(_get("song.audio_quality", 192))
 
-# Audio format
-AUDIO_FORMAT: str = "mp3"
+AUDIO_FORMAT: str = _get("song.audio_format", "mp3")
 
 # ====================
 # DOWNLOAD CONFIGURATION
 # ====================
 
-# Download directory for audio files
-DOWNLOAD_DIR: str = os.getenv("DOWNLOAD_DIR", "./downloads")
+DOWNLOAD_DIR: str = _get("download.download_dir", "./downloads")
 
-# ====================
-# THREADING CONFIGURATION
-# ====================
-
-# Maximum number of concurrent threads
 MAX_WORKERS: int = 5
-
-# Timeout for download operations
 DOWNLOAD_TIMEOUT: int = 60
 
-# ====================
-# YOUTUBE CONFIGURATION
-# ====================
+YOUTUBE_CATEGORY: str = _get("download.youtube_category", "Music")
 
-# Filtered category (only "Music")
-YOUTUBE_CATEGORY: str = "Music"
+CHANNEL_WHITELIST_ENABLED: bool = bool(_get("download.channel_whitelist_enabled", False))
 
-# Channel whitelist: when enabled, only videos from trusted channels are downloaded.
-# Set CHANNEL_WHITELIST_ENABLED=true in .env to activate.
-CHANNEL_WHITELIST_ENABLED: bool = os.getenv("CHANNEL_WHITELIST_ENABLED", "false").lower() == "true"
 TRUSTED_CHANNELS_FILE: str = os.path.join("data", "trusted_channels.json")
 
 # ====================
 # LOGGING CONFIGURATION
 # ====================
 
-# Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+LOG_LEVEL: str = _get("logging.level", "INFO")
 
-# Log file
-LOG_FILE: str = os.getenv("LOG_FILE", "twitch_sr.log")
+LOG_FILE: str = _get("logging.file", "twitch_sr.log")
 
 # ====================
 # QUEUE CONFIGURATION
 # ====================
 
-# Maximum queue size
-MAX_QUEUE_SIZE: int = 50
+MAX_QUEUE_SIZE: int = int(_get("queue.max_size", 50))
 
 # ====================
-# EXTRA CONFIGURATION (Additional features)
+# VOTE TO SKIP CONFIGURATION
 # ====================
 
-# Admin users (Twitch nicknames with special permissions)
-# Configurable via ADMIN_USERS environment variable (e.g. "user1,user2,user3")
-ADMIN_USERS: list[str] = [x.strip().lower() for x in os.getenv("ADMIN_USERS", "").split(",") if x.strip()]
+VOTE_SKIP_COMMAND: str = "vote"
 
-# Blacklist users (cannot use the bot)
-BLACKLIST_USERS: list[str] = []
+VOTE_REQUIRED_COUNT: int = int(_get("vote.required_count", 3))
 
 # ====================
-# ADVANCED COMMAND CONFIGURATION
+# PLAYLIST CONFIGURATION
 # ====================
 
-# Playlist commands
 PLAYLIST_CREATE_COMMAND: str = "create"
 PLAYLIST_VIEW_COMMAND: str = "playlist"
 PLAYLIST_ADD_COMMAND: str = "add"
@@ -109,33 +113,38 @@ PLAYLIST_MOVE_COMMAND: str = "move"
 PLAYLIST_CLEAR_COMMAND: str = "clear"
 PLAYLIST_POMPA_COMMAND: str = "pump"
 
-# Max songs per pump batch (sliding window)
-MAX_POMPA_SONGS: int = 5
+MAX_POMPA_SONGS: int = int(_get("playlist.max_pompa_songs", 5))
 
-# Cooldown between pump commands (minutes)
-PUMP_COOLDOWN_MINUTES: int = 15
+PUMP_COOLDOWN_MINUTES: int = int(_get("playlist.pompa_cooldown_minutes", 15))
 
-# Admin commands
+# ====================
+# ADMIN COMMANDS
+# ====================
+
 ADMIN_BLACKLIST_COMMAND: str = "blacklist"
 ADMIN_UNBLACKLIST_COMMAND: str = "unblacklist"
 ADMIN_BLACKLIST_LIST_COMMAND: str = "blacklist_list"
 ADMIN_SKIP_COMMAND: str = "skip"
-
 ADMIN_TRUST_CHANNEL_COMMAND: str = "trust_channel"
 ADMIN_UNTRUST_CHANNEL_COMMAND: str = "untrust_channel"
 ADMIN_TRUSTED_CHANNELS_LIST_COMMAND: str = "trusted_channels"
-
 ADMIN_REMOVE_QUEUE_COMMAND: str = "remove_queue"
 ADMIN_CLEAR_QUEUE_COMMAND: str = "clear_queue"
 ADMIN_DELETE_COMMAND: str = "delete"
 
-# Analytics commands
+# ====================
+# ANALYTICS COMMANDS
+# ====================
+
 ANALYTICS_STATS_COMMAND: str = "stats"
 ANALYTICS_TOP_SONGS_COMMAND: str = "top_songs"
 ANALYTICS_TOP_USERS_COMMAND: str = "top_users"
 ANALYTICS_STORIA_COMMAND: str = "history"
 
-# Music control commands
+# ====================
+# MUSIC CONTROL COMMANDS
+# ====================
+
 MUSIC_VOLUME_COMMAND: str = "volume"
 MUSIC_PAUSE_COMMAND: str = "pause"
 MUSIC_RESUME_COMMAND: str = "resume"
@@ -148,30 +157,28 @@ MUSIC_WHEN_COMMAND: str = "when"
 MUSIC_RANDOM_COMMAND: str = "random"
 MUSIC_OPS_COMMAND: str = "ops"
 
-# Utility commands
+# ====================
+# UTILITY COMMANDS
+# ====================
+
 UTILITY_HELP_COMMAND: str = "help"
 UTILITY_VERSION_COMMAND: str = "version"
 UTILITY_UPTIME_COMMAND: str = "uptime"
 
 # ====================
-# VOTE TO SKIP CONFIGURATION
+# RANDOM SONG COOLDOWN
 # ====================
 
-# Command to vote for skipping the current song
-VOTE_SKIP_COMMAND: str = "vote"
-
-# Number of different users needed to trigger a skip
-VOTE_REQUIRED_COUNT: int = 3
-
-# ====================
-# RANDOM SONG COOLDOWN CONFIGURATION
-# ====================
-
-# Persistence file for random song cooldown
 COOLDOWN_FILE: str = os.path.join("data", "random_cooldown.json")
-
-# Cooldown duration for random songs in seconds (default: 1 hour)
 RANDOM_COOLDOWN_SECONDS: int = 3600
-
-# Maximum number of attempts to find a song not in cooldown
 RANDOM_MAX_ATTEMPTS: int = 10
+
+# ====================
+# DASHBOARD CONFIGURATION
+# ====================
+
+DASHBOARD_ENABLED: bool = bool(_get("dashboard.enabled", True))
+
+DASHBOARD_PORT: int = int(_get("dashboard.port", 8080))
+
+DASHBOARD_HOST: str = _get("dashboard.host", "0.0.0.0")

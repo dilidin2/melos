@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melos Dashboard</title>
+    <style>
+        :root {
+            --bg-primary: #0e0e10;
+            --bg-secondary: #18181b;
+            --bg-tertiary: #1f1f23;
+            --bg-hover: #26262c;
+            --accent: #9146ff;
+            --accent-hover: #772ce8;
+            --accent-light: #9146ff20;
+            --text-primary: #efeff1;
+            --text-secondary: #adadb8;
+            --text-muted: #797980;
+            --border: #2f2f35;
+            --success: #00f996;
+            --danger: #ff4949;
+            --warning: #ffb800;
+            --radius: 8px;
+            --transition: 0.15s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+            transition: background var(--transition);
+        }
+
+        .status-dot.online { background: var(--success); box-shadow: 0 0 6px var(--success); }
+        .status-dot.playing { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: pulse 1.5s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Layout */
+        .container {
+            display: flex;
+            min-height: calc(100vh - 57px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 16px 0;
+            flex-shrink: 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 14px;
+            transition: all var(--transition);
+        }
+
+        .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .nav-item.active { background: var(--accent-light); color: var(--accent); border-right: 3px solid var(--accent); }
+        .nav-item .icon { width: 18px; text-align: center; }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #e03e3e; }
+        .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+        /* Inputs */
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        input[type="text"], input[type="number"] {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            transition: border-color var(--transition);
+        }
+
+        input:focus { border-color: var(--accent); }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 10px 12px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover td { background: var(--bg-hover); }
+
+        /* Queue Item */
+        .queue-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            transition: background var(--transition);
+        }
+
+        .queue-item:hover { background: var(--bg-hover); }
+
+        .queue-pos {
+            width: 28px;
+            height: 28px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .queue-info { flex: 1; min-width: 0; }
+
+        .queue-title {
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .queue-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .queue-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        /* User Badge */
+        .badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-user { background: var(--accent-light); color: var(--accent); }
+        .badge-count { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+        /* Playback Controls */
+        .playback-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .playback-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all var(--transition);
+        }
+
+        .playback-btn:hover { background: var(--accent); }
+        .playback-btn.active { background: var(--accent); }
+
+        .volume-slider {
+            flex: 1;
+            max-width: 150px;
+            -webkit-appearance: none;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--bg-tertiary);
+            outline: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+        }
+
+        /* Playlist */
+        .playlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .playlist-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .playlist-card:hover { border-color: var(--accent); background: var(--bg-hover); }
+
+        .playlist-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .playlist-user {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .playlist-stats {
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .modal-title { font-size: 16px; font-weight: 600; }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+        }
+
+        .modal-close:hover { color: var(--text-primary); }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            padding: 10px 16px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            animation: slideIn 0.2s ease;
+            max-width: 350px;
+        }
+
+        .toast-success { background: var(--success); color: #000; }
+        .toast-error { background: var(--danger); color: white; }
+        .toast-info { background: var(--accent); color: white; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon { font-size: 32px; margin-bottom: 8px; }
+        .empty-state .text { font-size: 14px; }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🎵</div>
+            <span>Melos Dashboard</span>
+        </div>
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot" id="connectionDot"></div>
+                <span id="connectionText">Connecting...</span>
+            </div>
+            <div class="status-indicator">
+                <div class="status-dot" id="playbackDot"></div>
+                <span id="playbackText">Idle</span>
+            </div>
+            <span id="uptimeText">--</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="nav-item active" data-section="overview">
+                <span class="icon">📊</span> Overview
+            </div>
+            <div class="nav-item" data-section="queue">
+                <span class="icon">🎶</span> Queue
+            </div>
+            <div class="nav-item" data-section="playlists">
+                <span class="icon">📁</span> Playlists
+            </div>
+            <div class="nav-item" data-section="blacklist">
+                <span class="icon">🚫</span> Blacklist
+            </div>
+            <div class="nav-item" data-section="whitelist">
+                <span class="icon">✅</span> Whitelist
+            </div>
+            <div class="nav-item" data-section="analytics">
+                <span class="icon">📈</span> Analytics
+            </div>
+            <div class="nav-item" data-section="library">
+                <span class="icon">💿</span> Library
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Overview Section -->
+            <section class="section active" id="overview">
+                <div class="section-header">
+                    <h1 class="section-title">Overview</h1>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Queue</div>
+                        <div class="stat-value" id="statQueue">0</div>
+                        <div class="stat-sub">songs waiting</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Requests</div>
+                        <div class="stat-value" id="statRequests">0</div>
+                        <div class="stat-sub">all time</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Plays</div>
+                        <div class="stat-value" id="statPlays">0</div>
+                        <div class="stat-sub">all time</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Today</div>
+                        <div class="stat-value" id="statToday">0</div>
+                        <div class="stat-sub">requests today</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Blacklisted</div>
+                        <div class="stat-value" id="statBlacklist">0</div>
+                        <div class="stat-sub">users blocked</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Uptime</div>
+                        <div class="stat-value" id="statUptime">--</div>
+                        <div class="stat-sub">bot online</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Playback Controls</div>
+                    <div class="playback-controls">
+                        <button class="playback-btn" id="btnPause" title="Pause">⏸</button>
+                        <button class="playback-btn" id="btnResume" title="Resume">▶</button>
+                        <button class="playback-btn" id="btnSkip" title="Skip">⏭</button>
+                        <button class="playback-btn" id="btnStop" title="Stop">⏹</button>
+                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="100">
+                        <span id="volumeLabel" style="font-size:12px;color:var(--text-muted);min-width:35px;">100%</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Repeat Mode</div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button class="btn btn-ghost btn-sm" id="repeatOffBtn">Off</button>
+                        <button class="btn btn-ghost btn-sm" id="repeatCountBtn">Count</button>
+                        <button class="btn btn-ghost btn-sm" id="repeatInfiniteBtn">∞ Infinite</button>
+                        <span id="repeatStatus" style="font-size:12px;color:var(--text-muted);margin-left:auto;">Off</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Up Next</div>
+                    <div id="upNextList"></div>
+                </div>
+            </section>
+
+            <!-- Queue Section -->
+            <section class="section" id="queue">
+                <div class="section-header">
+                    <h1 class="section-title">Queue</h1>
+                    <button class="btn btn-danger btn-sm" id="clearQueueBtn">Clear Queue</button>
+                </div>
+                <div class="card" id="queueList">
+                    <div class="loading">Loading queue...</div>
+                </div>
+            </section>
+
+            <!-- Playlists Section -->
+            <section class="section" id="playlists">
+                <div class="section-header">
+                    <h1 class="section-title">Playlists</h1>
+                    <button class="btn btn-primary btn-sm" id="createPlaylistBtn">+ New Playlist</button>
+                </div>
+                <div class="playlist-grid" id="playlistGrid">
+                    <div class="loading">Loading playlists...</div>
+                </div>
+            </section>
+
+            <!-- Blacklist Section -->
+            <section class="section" id="blacklist">
+                <div class="section-header">
+                    <h1 class="section-title">Blacklist</h1>
+                </div>
+                <div class="card">
+                    <div class="input-group">
+                        <input type="text" id="blacklistInput" placeholder="Username to blacklist...">
+                        <button class="btn btn-primary" id="blacklistAddBtn">Add</button>
+                    </div>
+                </div>
+                <div class="card" id="blacklistList">
+                    <div class="loading">Loading blacklist...</div>
+                </div>
+            </section>
+
+            <!-- Whitelist Section -->
+            <section class="section" id="whitelist">
+                <div class="section-header">
+                    <h1 class="section-title">Whitelist</h1>
+                </div>
+                <div class="card">
+                    <div class="input-group">
+                        <input type="text" id="whitelistInput" placeholder="Username to whitelist...">
+                        <button class="btn btn-primary" id="whitelistAddBtn">Add</button>
+                    </div>
+                </div>
+                <div class="card" id="whitelistList">
+                    <div class="loading">Loading whitelist...</div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section class="section" id="analytics">
+                <div class="section-header">
+                    <h1 class="section-title">Analytics</h1>
+                </div>
+                <div class="stats-grid" id="analyticsStats"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div class="card">
+                        <div class="card-title">Top Songs</div>
+                        <div id="topSongsList"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Top Users</div>
+                        <div id="topUsersList"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Recent History</div>
+                    <div id="historyList"></div>
+                </div>
+            </section>
+
+            <!-- Library Section -->
+            <section class="section" id="library">
+                <div class="section-header">
+                    <h1 class="section-title">Library</h1>
+                </div>
+                <div class="card" id="libraryList">
+                    <div class="loading">Loading library...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Playlist Detail Modal -->
+    <div class="modal-overlay" id="playlistModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalPlaylistName">Playlist</h2>
+                <button class="modal-close" id="modalClose">✕</button>
+            </div>
+            <div id="modalPlaylistContent"></div>
+        </div>
+    </div>
+
+    <!-- Create Playlist Modal -->
+    <div class="modal-overlay" id="createPlaylistModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Create Playlist</h2>
+                <button class="modal-close" id="createModalClose">✕</button>
+            </div>
+            <div class="input-group">
+                <input type="text" id="newPlaylistUser" placeholder="Username">
+            </div>
+            <div class="input-group">
+                <input type="text" id="newPlaylistName" placeholder="Playlist name">
+            </div>
+            <button class="btn btn-primary" id="createPlaylistSubmit" style="width:100%;margin-top:8px;">Create</button>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ── API Helper ──
+        async function api(method, path, params = {}) {
+            const url = new URL(path, window.location.origin);
+            if (params) {
+                Object.entries(params).forEach(([k, v]) => {
+                    if (v !== undefined && v !== null) url.searchParams.append(k, v);
+                });
+            }
+            try {
+                const res = await fetch(url, { method });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({ detail: res.statusText }));
+                    throw new Error(err.detail || err.error || 'Request failed');
+                }
+                return res.json();
+            } catch (e) {
+                console.error(`API ${method} ${path}:`, e);
+                throw e;
+            }
+        }
+
+        // ── Toast ──
+        function toast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast toast-${type}`;
+            t.textContent = msg;
+            container.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        // ── Navigation ──
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById(item.dataset.section).classList.add('active');
+                loadSection(item.dataset.section);
+            });
+        });
+
+        // ── Status Polling ──
+        let statusData = null;
+
+        async function updateStatus() {
+            try {
+                statusData = await api('GET', '/api/status');
+                const connDot = document.getElementById('connectionDot');
+                const connText = document.getElementById('connectionText');
+                const playDot = document.getElementById('playbackDot');
+                const playText = document.getElementById('playbackText');
+                const uptimeText = document.getElementById('uptimeText');
+
+                connDot.className = 'status-dot' + (statusData.connected ? ' online' : '');
+                connText.textContent = statusData.connected ? 'Connected' : 'Disconnected';
+
+                if (statusData.is_playing) {
+                    playDot.className = 'status-dot playing';
+                    playText.textContent = 'Playing';
+                } else if (statusData.is_paused) {
+                    playDot.className = 'status-dot';
+                    playDot.style.background = 'var(--warning)';
+                    playText.textContent = 'Paused';
+                } else {
+                    playDot.className = 'status-dot';
+                    playText.textContent = 'Idle';
+                }
+
+                const secs = Math.floor(statusData.uptime_seconds);
+                const h = Math.floor(secs / 3600);
+                const m = Math.floor((secs % 3600) / 60);
+                const s = secs % 60;
+                const uptimeStr = `${h}h ${m}m ${s}s`;
+                uptimeText.textContent = uptimeStr;
+
+                // Update overview stat card too
+                const statUptime = document.getElementById('statUptime');
+                if (statUptime) statUptime.textContent = uptimeStr;
+
+                // Update overview stats
+                document.getElementById('statQueue').textContent = statusData.queue_size;
+
+                // Repeat status
+                const rep = statusData.repeat;
+                document.getElementById('repeatStatus').textContent =
+                    rep.mode === 'off' ? 'Off' :
+                    rep.mode === 'count' ? `${rep.count}x (${rep.remaining} left)` : '∞ Infinite';
+
+                // Highlight active repeat button
+                document.getElementById('repeatOffBtn').className =
+                    `btn btn-ghost btn-sm${rep.mode === 'off' ? ' btn-primary' : ''}`;
+                document.getElementById('repeatCountBtn').className =
+                    `btn btn-ghost btn-sm${rep.mode === 'count' ? ' btn-primary' : ''}`;
+                document.getElementById('repeatInfiniteBtn').className =
+                    `btn btn-ghost btn-sm${rep.mode === 'infinite' ? ' btn-primary' : ''}`;
+
+            } catch (e) {
+                console.error('Status update failed:', e);
+            }
+        }
+
+        // ── Section Loaders ──
+        async function loadSection(section) {
+            switch (section) {
+                case 'overview': await loadOverview(); break;
+                case 'queue': await loadQueue(); break;
+                case 'playlists': await loadPlaylists(); break;
+                case 'blacklist': await loadBlacklist(); break;
+                case 'whitelist': await loadWhitelist(); break;
+                case 'analytics': await loadAnalytics(); break;
+                case 'library': await loadLibrary(); break;
+            }
+        }
+
+        async function loadOverview() {
+            try {
+                const summary = await api('GET', '/api/analytics/summary');
+                const bl = await api('GET', '/api/blacklist');
+
+                document.getElementById('statRequests').textContent = summary.total_requests;
+                document.getElementById('statPlays').textContent = summary.total_plays;
+                document.getElementById('statToday').textContent = summary.today.total_requests_today;
+                document.getElementById('statBlacklist').textContent = bl.users.length;
+
+                // Up next
+                const queue = await api('GET', '/api/queue?limit=5');
+                const upNext = document.getElementById('upNextList');
+                if (queue.items.length === 0) {
+                    upNext.innerHTML = '<div class="empty-state"><div class="text">Queue is empty</div></div>';
+                } else {
+                    upNext.innerHTML = queue.items.map(item => `
+                        <div class="queue-item">
+                            <div class="queue-pos">${item.position}</div>
+                            <div class="queue-info">
+                                <div class="queue-title">${escapeHtml(item.resolved_title || item.query)}</div>
+                                <div class="queue-meta">by <span class="badge badge-user">@${escapeHtml(item.username)}</span></div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error('Overview load failed:', e);
+            }
+        }
+
+        async function loadQueue() {
+            try {
+                const queue = await api('GET', '/api/queue');
+                const list = document.getElementById('queueList');
+                if (queue.items.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><div class="icon">🎶</div><div class="text">Queue is empty</div></div>';
+                } else {
+                    list.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:50px">#</th>
+                                    <th>Song</th>
+                                    <th>User</th>
+                                    <th style="width:80px"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${queue.items.map(item => `
+                                    <tr>
+                                        <td>${item.position}</td>
+                                        <td>${escapeHtml(item.resolved_title || item.query)}</td>
+                                        <td><span class="badge badge-user">@${escapeHtml(item.username)}</span></td>
+                                        <td>
+                                            <button class="btn btn-danger btn-sm" onclick="removeFromQueue(${item.position})">✕</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('queueList').innerHTML = '<div class="empty-state"><div class="text">Failed to load queue</div></div>';
+            }
+        }
+
+        async function loadPlaylists() {
+            try {
+                const data = await api('GET', '/api/playlists');
+                const grid = document.getElementById('playlistGrid');
+                const allPlaylists = [];
+
+                for (const [user, playlists] of Object.entries(data.playlists)) {
+                    for (const pl of playlists) {
+                        allPlaylists.push({ ...pl, user });
+                    }
+                }
+
+                if (allPlaylists.length === 0) {
+                    grid.innerHTML = '<div class="empty-state"><div class="icon">📁</div><div class="text">No playlists yet</div></div>';
+                } else {
+                    grid.innerHTML = allPlaylists.map(pl => `
+                        <div class="playlist-card" onclick="openPlaylist('${pl.user}', '${pl.id}')">
+                            <div class="playlist-name">${escapeHtml(pl.name)}</div>
+                            <div class="playlist-user">@${escapeHtml(pl.user)}</div>
+                            <div class="playlist-stats">
+                                <span>🎵 ${pl.songs.length} songs</span>
+                                <span>${formatDate(pl.last_modified)}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                document.getElementById('playlistGrid').innerHTML = '<div class="empty-state"><div class="text">Failed to load playlists</div></div>';
+            }
+        }
+
+        async function loadBlacklist() {
+            try {
+                const data = await api('GET', '/api/blacklist');
+                const list = document.getElementById('blacklistList');
+                if (data.users.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><div class="icon">🚫</div><div class="text">No blacklisted users</div></div>';
+                } else {
+                    list.innerHTML = `
+                        <table>
+                            <thead><tr><th>User</th><th></th></tr></thead>
+                            <tbody>
+                                ${data.users.map(u => `
+                                    <tr>
+                                        <td><span class="badge badge-user">@${escapeHtml(u)}</span></td>
+                                        <td><button class="btn btn-ghost btn-sm" onclick="removeFromBlacklist('${escapeHtml(u)}')">Remove</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('blacklistList').innerHTML = '<div class="empty-state"><div class="text">Failed to load blacklist</div></div>';
+            }
+        }
+
+        async function loadWhitelist() {
+            try {
+                const data = await api('GET', '/api/whitelist');
+                const list = document.getElementById('whitelistList');
+                if (data.users.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><div class="icon">✅</div><div class="text">No whitelisted users</div></div>';
+                } else {
+                    list.innerHTML = `
+                        <table>
+                            <thead><tr><th>User</th><th></th></tr></thead>
+                            <tbody>
+                                ${data.users.map(u => `
+                                    <tr>
+                                        <td><span class="badge badge-user">@${escapeHtml(u)}</span></td>
+                                        <td><button class="btn btn-ghost btn-sm" onclick="removeFromWhitelist('${escapeHtml(u)}')">Remove</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('whitelistList').innerHTML = '<div class="empty-state"><div class="text">Failed to load whitelist</div></div>';
+            }
+        }
+
+        async function loadAnalytics() {
+            try {
+                const summary = await api('GET', '/api/analytics/summary');
+                const topSongs = await api('GET', '/api/analytics/top-songs');
+                const topUsers = await api('GET', '/api/analytics/top-users');
+                const history = await api('GET', '/api/analytics/history');
+
+                document.getElementById('analyticsStats').innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-label">Total Requests</div>
+                        <div class="stat-value">${summary.total_requests}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Plays</div>
+                        <div class="stat-value">${summary.total_plays}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Today</div>
+                        <div class="stat-value">${summary.today.total_requests_today}</div>
+                        <div class="stat-sub">${summary.today.unique_users_today} unique users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">This Week</div>
+                        <div class="stat-value">${summary.week.total_requests_week}</div>
+                        <div class="stat-sub">${summary.week.unique_users_week} unique users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">This Month</div>
+                        <div class="stat-value">${summary.month.total_requests_month}</div>
+                        <div class="stat-sub">${summary.month.unique_users_month} unique users</div>
+                    </div>
+                `;
+
+                document.getElementById('topSongsList').innerHTML = topSongs.songs.length === 0
+                    ? '<div class="empty-state"><div class="text">No data yet</div></div>'
+                    : `<table><thead><tr><th>#</th><th>Song</th><th>Plays</th></tr></thead><tbody>
+                        ${topSongs.songs.map((s, i) => `
+                            <tr><td>${i + 1}</td><td>${escapeHtml(s.title)}</td><td><span class="badge badge-count">${s.count}</span></td></tr>
+                        `).join('')}
+                       </tbody></table>`;
+
+                document.getElementById('topUsersList').innerHTML = topUsers.users.length === 0
+                    ? '<div class="empty-state"><div class="text">No data yet</div></div>'
+                    : `<table><thead><tr><th>#</th><th>User</th><th>Requests</th></tr></thead><tbody>
+                        ${topUsers.users.map((u, i) => `
+                            <tr><td>${i + 1}</td><td>@${escapeHtml(u.username)}</td><td><span class="badge badge-count">${u.count}</span></td></tr>
+                        `).join('')}
+                       </tbody></table>`;
+
+                document.getElementById('historyList').innerHTML = history.history.length === 0
+                    ? '<div class="empty-state"><div class="text">No history yet</div></div>'
+                    : `<table><thead><tr><th>Time</th><th>Song</th><th>User</th></tr></thead><tbody>
+                        ${history.history.map(h => `
+                            <tr>
+                                <td style="font-size:11px;color:var(--text-muted)">${formatDate(h.timestamp)}</td>
+                                <td>${escapeHtml(h.query)}</td>
+                                <td><span class="badge badge-user">@${escapeHtml(h.username)}</span></td>
+                            </tr>
+                        `).join('')}
+                       </tbody></table>`;
+            } catch (e) {
+                console.error('Analytics load failed:', e);
+            }
+        }
+
+        async function loadLibrary() {
+            try {
+                const data = await api('GET', '/api/library');
+                const list = document.getElementById('libraryList');
+                if (data.files.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><div class="icon">💿</div><div class="text">No songs in library</div></div>';
+                } else {
+                    list.innerHTML = `
+                        <table>
+                            <thead><tr><th>Title</th><th>Size</th></tr></thead>
+                            <tbody>
+                                ${data.files.map(f => `
+                                    <tr>
+                                        <td>${escapeHtml(f.title)}</td>
+                                        <td style="color:var(--text-muted);font-size:11px;">${formatBytes(f.size)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        <div style="margin-top:12px;font-size:12px;color:var(--text-muted);text-align:right;">Total: ${data.total} files</div>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('libraryList').innerHTML = '<div class="empty-state"><div class="text">Failed to load library</div></div>';
+            }
+        }
+
+        // ── Actions ──
+
+        async function removeFromQueue(pos) {
+            try {
+                await api('DELETE', `/api/queue/${pos}`);
+                toast('Removed from queue', 'success');
+                loadQueue();
+                updateStatus();
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function clearQueue() {
+            if (!confirm('Clear the entire queue?')) return;
+            try {
+                await api('DELETE', '/api/queue');
+                toast('Queue cleared', 'success');
+                loadQueue();
+                updateStatus();
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function addToBlacklist() {
+            const input = document.getElementById('blacklistInput');
+            const username = input.value.trim();
+            if (!username) return;
+            try {
+                await api('POST', '/api/blacklist', { username });
+                toast(`@${username} blacklisted`, 'success');
+                input.value = '';
+                loadBlacklist();
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function removeFromBlacklist(username) {
+            try {
+                await api('DELETE', `/api/blacklist/${username}`);
+                toast(`@${username} removed from blacklist`, 'success');
+                loadBlacklist();
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function addToWhitelist() {
+            const input = document.getElementById('whitelistInput');
+            const username = input.value.trim();
+            if (!username) return;
+            try {
+                await api('POST', '/api/whitelist', { username });
+                toast(`@${username} whitelisted`, 'success');
+                input.value = '';
+                loadWhitelist();
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function removeFromWhitelist(username) {
+            try {
+                await api('DELETE', `/api/whitelist/${username}`);
+                toast(`@${username} removed from whitelist`, 'success');
+                loadWhitelist();
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function openPlaylist(user, id) {
+            try {
+                const pl = await api('GET', `/api/playlists/${user}/${id}`);
+                document.getElementById('modalPlaylistName').textContent = pl.name;
+
+                let songsHtml = '';
+                if (pl.songs.length === 0) {
+                    songsHtml = '<div class="empty-state"><div class="text">No songs in this playlist</div></div>';
+                } else {
+                    songsHtml = `<table><thead><tr><th>#</th><th>Song</th><th></th></tr></thead><tbody>
+                        ${pl.songs.map((s, i) => `
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td>${escapeHtml(s.query)}</td>
+                                <td><button class="btn btn-ghost btn-sm" onclick="removePlaylistSong('${user}', '${escapeHtml(pl.name)}', '${escapeHtml(s.query).replace(/'/g, "\\'")}')">✕</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody></table>`;
+                }
+
+                document.getElementById('modalPlaylistContent').innerHTML = `
+                    <div style="margin-bottom:12px;font-size:12px;color:var(--text-muted);">
+                        @${escapeHtml(user)} · ${pl.songs.length} songs · Created ${formatDate(pl.created_at)}
+                    </div>
+                    <div class="input-group" style="margin-bottom:12px;">
+                        <input type="text" id="addSongInput" placeholder="Add song from library...">
+                        <button class="btn btn-primary btn-sm" onclick="addPlaylistSong('${user}', '${escapeHtml(pl.name)}')">Add</button>
+                    </div>
+                    ${songsHtml}
+                    <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">
+                        <button class="btn btn-danger btn-sm" onclick="deletePlaylist('${user}', '${id}')">Delete Playlist</button>
+                    </div>
+                `;
+
+                document.getElementById('playlistModal').classList.add('active');
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function addPlaylistSong(user, name) {
+            const input = document.getElementById('addSongInput');
+            const query = input.value.trim();
+            if (!query) return;
+            try {
+                await api('POST', `/api/playlists/${user}/${name}/songs`, { query });
+                toast('Song added', 'success');
+                input.value = '';
+                openPlaylist(user, document.getElementById('modalPlaylistName').textContent);
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function removePlaylistSong(user, name, query) {
+            try {
+                await api('DELETE', `/api/playlists/${user}/${name}/songs/${encodeURIComponent(query)}`);
+                toast('Song removed', 'success');
+                loadPlaylists();
+                document.getElementById('playlistModal').classList.remove('active');
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function deletePlaylist(user, id) {
+            if (!confirm('Delete this playlist?')) return;
+            try {
+                await api('DELETE', `/api/playlists/${user}/${id}`);
+                toast('Playlist deleted', 'success');
+                loadPlaylists();
+                document.getElementById('playlistModal').classList.remove('active');
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function createPlaylist() {
+            const user = document.getElementById('newPlaylistUser').value.trim();
+            const name = document.getElementById('newPlaylistName').value.trim();
+            if (!user || !name) { toast('Fill in both fields', 'error'); return; }
+            try {
+                await api('POST', '/api/playlists', { username: user, name });
+                toast(`Playlist '${name}' created`, 'success');
+                document.getElementById('newPlaylistUser').value = '';
+                document.getElementById('newPlaylistName').value = '';
+                document.getElementById('createPlaylistModal').classList.remove('active');
+                loadPlaylists();
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        // ── Playback Controls ──
+
+        async function controlPlayback(action) {
+            try {
+                await api('POST', `/api/playback/${action}`);
+                updateStatus();
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function setVolume(val) {
+            try {
+                await api('POST', '/api/playback/volume', { level: val });
+                document.getElementById('volumeLabel').textContent = val + '%';
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        async function setRepeat(mode, count = 1) {
+            try {
+                await api('POST', '/api/playback/repeat', { mode, count });
+                updateStatus();
+            } catch (e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        // ── Event Listeners ──
+
+        document.getElementById('btnPause').addEventListener('click', () => controlPlayback('pause'));
+        document.getElementById('btnResume').addEventListener('click', () => controlPlayback('resume'));
+        document.getElementById('btnSkip').addEventListener('click', () => controlPlayback('skip'));
+        document.getElementById('btnStop').addEventListener('click', () => controlPlayback('stop'));
+
+        document.getElementById('volumeSlider').addEventListener('input', (e) => {
+            setVolume(e.target.value);
+        });
+
+        document.getElementById('repeatOffBtn').addEventListener('click', () => setRepeat('off'));
+        document.getElementById('repeatCountBtn').addEventListener('click', () => setRepeat('count', 3));
+        document.getElementById('repeatInfiniteBtn').addEventListener('click', () => setRepeat('infinite'));
+
+        document.getElementById('blacklistAddBtn').addEventListener('click', addToBlacklist);
+        document.getElementById('blacklistInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') addToBlacklist(); });
+
+        document.getElementById('whitelistAddBtn').addEventListener('click', addToWhitelist);
+        document.getElementById('whitelistInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') addToWhitelist(); });
+
+        document.getElementById('clearQueueBtn').addEventListener('click', clearQueue);
+
+        document.getElementById('createPlaylistBtn').addEventListener('click', () => {
+            document.getElementById('createPlaylistModal').classList.add('active');
+        });
+
+        document.getElementById('createPlaylistSubmit').addEventListener('click', createPlaylist);
+
+        document.getElementById('modalClose').addEventListener('click', () => {
+            document.getElementById('playlistModal').classList.remove('active');
+        });
+
+        document.getElementById('createModalClose').addEventListener('click', () => {
+            document.getElementById('createPlaylistModal').classList.remove('active');
+        });
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.classList.remove('active');
+            });
+        });
+
+        // ── Utilities ──
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function formatDate(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            const now = new Date();
+            const diff = now - d;
+            if (diff < 60000) return 'just now';
+            if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+            return d.toLocaleDateString();
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // ── Init ──
+
+        setInterval(updateStatus, 2000);
+        setInterval(() => {
+            const section = document.querySelector('.section.active')?.id;
+            if (section) loadSection(section);
+        }, 10000);
+
+        updateStatus();
+        loadOverview();
+    </script>
+</body>
+</html>

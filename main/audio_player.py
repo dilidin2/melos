@@ -84,3 +84,9 @@ class AudioPlayer:
     def is_paused(self) -> bool:
         """Returns True if paused."""
         return self._is_paused
+
+    def set_volume(self, level: float):
+        """Set volume level (0.0 to 1.0)."""
+        level = max(0.0, min(1.0, level))
+        pygame.mixer.music.set_volume(level)
+        logger.info(f"🔊 Volume set to {int(level * 100)}%")

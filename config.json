@@ -1,0 +1,35 @@
+{
+  "twitch": {
+    "target_channel": "dilidindilidon",
+    "admin_users": ["dilidindilidon", "gmiulia", "uomopuzzo", "ryn_skibidi", "er_pupone_francesco"]
+  },
+  "song": {
+    "max_duration_seconds": 900,
+    "audio_quality": 192,
+    "audio_format": "mp3"
+  },
+  "download": {
+    "download_dir": "./downloads",
+    "youtube_category": "Music",
+    "channel_whitelist_enabled": false
+  },
+  "queue": {
+    "max_size": 50
+  },
+  "vote": {
+    "required_count": 3
+  },
+  "playlist": {
+    "max_pompa_songs": 5,
+    "pompa_cooldown_minutes": 15
+  },
+  "dashboard": {
+    "enabled": true,
+    "port": 8070,
+    "host": "0.0.0.0"
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "twitch_sr.log"
+  }
+}

@@ -2,8 +2,10 @@
 """Main entry point for the Twitch music request bot."""
 
 import asyncio
+import threading
+import os
 
-from main.config import LOG_LEVEL, LOG_FILE
+from main.config import LOG_LEVEL, LOG_FILE, DASHBOARD_ENABLED, DASHBOARD_PORT, DASHBOARD_HOST
 from main.main_core import SongRequestBot
 from main.command_processor import CommandProcessor
 from main.playlist_manager import PlaylistManager
@@ -18,6 +20,18 @@ from commands.utility import UtilityCommands
 from main.logger import setup_logger
 
 setup_logger(log_file=LOG_FILE, level=LOG_LEVEL)
+
+
+def _start_dashboard_thread(api_module, host, port):
+    """Start uvicorn in a background thread."""
+    import uvicorn
+
+    def run():
+        uvicorn.run(api_module, host=host, port=port, log_level="warning", access_log=False)
+
+    thread = threading.Thread(target=run, daemon=True, name="dashboard")
+    thread.start()
+    return thread
 
 
 async def main():
@@ -53,6 +67,14 @@ async def main():
     bot.command_processor = command_processor
     bot.twitch_handler.set_command_callback(bot._handle_song_request)
     bot.twitch_handler.command_processor = command_processor
+
+    # ── Start Dashboard ──
+    if DASHBOARD_ENABLED:
+        from dashboard.api import app, init_dashboard
+
+        init_dashboard(bot, admin_handler, playlist_manager, analytics)
+        _start_dashboard_thread(app, DASHBOARD_HOST, DASHBOARD_PORT)
+        print(f"🌐 Dashboard running at http://{DASHBOARD_HOST}:{DASHBOARD_PORT}")
 
     await bot.run()
 
