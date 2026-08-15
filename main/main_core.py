@@ -304,6 +304,7 @@ class SongRequestBot:
                 "channel_id": item.channel_id,
                 "request_id": item.request_id,
                 "added_at": getattr(item, "added_at", datetime.now().isoformat()),
+                "resolved_title": getattr(item, "resolved_title", None),
             }
             for item in items
         ]
@@ -322,6 +323,7 @@ class SongRequestBot:
                 request_id=song_data["request_id"],
             )
             request.added_at = song_data.get("added_at")
+            request.resolved_title = song_data.get("resolved_title")
 
             try:
                 self.request_queue.queue.put_nowait(request)

@@ -254,14 +254,32 @@ class MusicCommands:
             if items[i].username == username:
                 removed = await self._request_queue.remove_by_index(i)
                 if removed:
+                    # Show the resolved song title (same one shown at
+                    # request time), not the raw query/URL. Fall back to
+                    # re-resolving the query if no title is available
+                    # (e.g. queue restored from an old persistence file).
+                    import asyncio
+
+                    title = removed.resolved_title
+                    if not title and self._bot and hasattr(self._bot, 'music_downloader'):
+                        try:
+                            song_info = await asyncio.to_thread(
+                                self._bot.music_downloader.get_song_info, removed.query
+                            )
+                            if song_info:
+                                title = song_info.get("title")
+                        except Exception:
+                            pass
+                    if not title:
+                        title = removed.query
+
                     # Persist the change
                     if self._bot and hasattr(self._bot, '_persist_queue'):
-                        import asyncio
                         try:
                             asyncio.create_task(self._bot._persist_queue())
                         except Exception:
                             pass
-                    return f"🗑️ Removed **{removed.query}** from the queue (your last song)."
+                    return f"🗑️ Removed **{title}** from the queue (your last song)."
                 break
 
         return "❌ You don't have any songs in the queue."

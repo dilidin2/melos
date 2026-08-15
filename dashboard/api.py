@@ -116,7 +116,8 @@ async def remove_from_queue(position: int):
         raise HTTPException(status_code=404, detail=f"No song at position {position}")
 
     await _bot._persist_queue()
-    msg = f"🗑️ Removed '{removed.query}' from queue via dashboard"
+    display_title = removed.resolved_title or removed.query
+    msg = f"🗑️ Removed '{display_title}' from queue via dashboard"
     await _bot.chat_message.send_public(TARGET_CHANNEL, msg)
     return {"removed": {"query": removed.query, "username": removed.username}}
 
