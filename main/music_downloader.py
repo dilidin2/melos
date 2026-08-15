@@ -173,6 +173,157 @@ class MusicDownloader:
         """
         return [url for url, _ in self._search_youtube_candidates_with_info(query, max_results)]
 
+    def _find_best_candidate(
+        self, query_or_url: str
+    ) -> tuple[Optional[Dict[str, Any]], Optional[str], list[str], int]:
+        """Searches YouTube and validates candidates, WITHOUT downloading.
+
+        Returns (info, url, rejection_reasons, num_tried):
+        - if a valid candidate is found, info and url refer to it (rejection
+          reasons of the earlier rejected candidates are still returned);
+        - otherwise info and url are None and rejection_reasons collects one
+          reason per rejected candidate (empty if there were no results at all).
+
+        Shared by download() and precheck() so both perform the exact same
+        search + validation. Uses the info already fetched from the search
+        (including duration) to avoid a second round-trip per video.
+        """
+        if self._is_url(query_or_url):
+            candidates_with_info: list[tuple[str, Optional[Dict[str, Any]]]] = [
+                (query_or_url, None)
+            ]
+        else:
+            candidates_with_info = self._search_youtube_candidates_with_info(
+                query_or_url, max_results=10
+            )
+            if not candidates_with_info:
+                return None, None, [], 0
+
+        rejection_reasons: list[str] = []
+
+        for candidate, prefetched_info in candidates_with_info:
+            # Use the info already fetched from the search if available;
+            # do a separate fetch only for direct URLs or if missing.
+            candidate_info = prefetched_info
+            if not candidate_info or not candidate_info.get("duration"):
+                candidate_info = self._extract_info(candidate)
+            if not candidate_info:
+                rejection_reasons.append("not available")
+                logger.warning(
+                    f"Info not available for '{candidate}', trying next"
+                )
+                continue
+            is_valid, error_msg = self._validate_song(candidate_info)
+            if not is_valid:
+                rejection_reasons.append(error_msg)
+                logger.warning(
+                    f"Candidate rejected '{candidate}': {error_msg}, trying next"
+                )
+                continue
+            return candidate_info, candidate, rejection_reasons, len(candidates_with_info)
+
+        return None, None, rejection_reasons, len(candidates_with_info)
+
+    def precheck(self, query_or_url: str) -> Dict[str, Any]:
+        """Checks song availability WITHOUT downloading it.
+
+        Runs the same local-match + YouTube search + validation that
+        download() would run, stopping before the actual download.
+        Used by !sr to verify the song exists BEFORE adding it to the queue.
+
+        Returns a dict with keys:
+          status:    "local" | "ok" | "not_found" | "rejected"
+          file_path: path of an existing local file (status == "local")
+          url:       best YouTube candidate URL (status == "ok")
+          title:     resolved title (when known)
+          duration:  duration in seconds (when known)
+          error:     user-facing message (status == "not_found"/"rejected")
+        """
+        # 1) Query is already an existing file path
+        if os.path.isfile(query_or_url):
+            title = os.path.splitext(os.path.basename(query_or_url))[0]
+            return {
+                "status": "local",
+                "file_path": query_or_url,
+                "title": title,
+                "duration": self._get_local_file_duration(query_or_url),
+            }
+
+        # 2) Local fuzzy match (instant, no network round-trip)
+        if not self._is_url(query_or_url):
+            local_file = self._find_matching_file(query_or_url)
+            if local_file:
+                title = os.path.splitext(os.path.basename(local_file))[0]
+                return {
+                    "status": "local",
+                    "file_path": local_file,
+                    "title": title,
+                    "duration": self._get_local_file_duration(local_file),
+                }
+
+        # 3) Online search + validation (no download)
+        info, url, rejection_reasons, _num_tried = self._find_best_candidate(query_or_url)
+        if info and url:
+            return {
+                "status": "ok",
+                "url": url,
+                "title": info.get("title") or query_or_url,
+                "duration": info.get("duration"),
+            }
+
+        kind = self._classify_rejections(rejection_reasons)
+        if kind == "none":
+            return {
+                "status": "not_found",
+                "error": (
+                    f"Can't find '{query_or_url}' on YouTube. "
+                    "The song was NOT added to the queue."
+                ),
+            }
+        if kind == "too_long":
+            error = (
+                f"All found results are too long "
+                f"(max {MAX_DURATION_SECONDS // 60} min). "
+                f"Search for a specific track, not the entire soundtrack."
+            )
+        elif kind == "wrong_category":
+            first_reason = next(
+                (r for r in rejection_reasons if "category" in r), ""
+            )
+            error = first_reason or (
+                f"The video is not in the {YOUTUBE_CATEGORY} category. "
+                f"Only songs are accepted."
+            )
+        elif kind == "untrusted_channel":
+            error = (
+                "None of the search results come from a trusted channel. "
+                "Use !trusted_channels to see authorized channels, "
+                "or ask an admin to add one with !trust_channel."
+            )
+        else:  # mixed reasons: first meaningful one
+            meaningful = next(
+                (r for r in rejection_reasons if r != "not available"),
+                rejection_reasons[0],
+            )
+            error = meaningful
+        return {"status": "rejected", "error": error}
+
+    def _classify_rejections(self, rejection_reasons: list[str]) -> str:
+        """Classifies rejection reasons into a single category.
+
+        Returns one of: "none", "too_long", "wrong_category",
+        "untrusted_channel", "mixed".
+        """
+        if not rejection_reasons:
+            return "none"
+        if all("too long" in r for r in rejection_reasons):
+            return "too_long"
+        if all("category" in r for r in rejection_reasons):
+            return "wrong_category"
+        if all("not in the trusted channels whitelist" in r for r in rejection_reasons):
+            return "untrusted_channel"
+        return "mixed"
+
     def _search_youtube_candidates_with_info(
         self, query: str, max_results: int = 5
     ) -> list[tuple[str, Dict[str, Any]]]:
@@ -247,51 +398,15 @@ class MusicDownloader:
                 logger.info(f"Local fuzzy match found: {local_file}")
                 return local_file
 
-        # If it's a direct URL, use only that; if it's a text query
-        # retrieve multiple candidates and try in order until one is available.
-        # FIX: we use _search_youtube_candidates_with_info to get the info
-        # already fetched from the search (including duration), avoiding a second
-        # round-trip for each video that caused "Duration not available" for all.
-        if self._is_url(query_or_url):
-            candidates_with_info: list[tuple[str, Optional[Dict[str, Any]]]] = [
-                (query_or_url, None)
-            ]
-        else:
-            raw = self._search_youtube_candidates_with_info(query_or_url, max_results=10)
-            if not raw:
-                logger.error(f"No results found for: '{query_or_url}'")
-                return None
-            candidates_with_info = raw  # type: ignore[assignment]
-
-        info: Optional[Dict[str, Any]] = None
-        url: Optional[str] = None
-        rejection_reasons: list[str] = []
-
-        for candidate, prefetched_info in candidates_with_info:
-            # Use the info already fetched from the search if available;
-            # do a separate fetch only for direct URLs or if missing.
-            candidate_info = prefetched_info
-            if not candidate_info or not candidate_info.get("duration"):
-                candidate_info = self._extract_info(candidate)
-            if not candidate_info:
-                rejection_reasons.append("not available")
-                logger.warning(
-                    f"Info not available for '{candidate}', trying next"
-                )
-                continue
-            is_valid, error_msg = self._validate_song(candidate_info)
-            if not is_valid:
-                rejection_reasons.append(error_msg)
-                logger.warning(
-                    f"Candidate rejected '{candidate}': {error_msg}, trying next"
-                )
-                continue
-            info = candidate_info
-            url = candidate
-            break
+        # Search + validate candidates WITHOUT downloading (shared with precheck).
+        # If it's a direct URL only that one is tried; otherwise up to 10
+        # candidates are tried in order until one passes validation.
+        info, url, rejection_reasons, num_tried = self._find_best_candidate(query_or_url)
 
         if not info or not url:
-            num_tried = len(candidates_with_info)
+            if not rejection_reasons:
+                logger.error(f"No results found for: '{query_or_url}'")
+                return None
 
             # Se tutti i candidati sono stati rifiutati, solleva un'eccezione
             # with the first significant reason found.

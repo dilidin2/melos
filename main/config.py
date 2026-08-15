@@ -64,6 +64,10 @@ AUDIO_QUALITY: int = int(_get("song.audio_quality", 192))
 
 AUDIO_FORMAT: str = _get("song.audio_format", "mp3")
 
+# Max seconds to wait for the pre-request search (local check + YouTube search)
+# before !sr gives up and replies with an error.
+SONG_PRECHECK_TIMEOUT: int = int(_get("song.precheck_timeout", 45))
+
 # ====================
 # DOWNLOAD CONFIGURATION
 # ====================

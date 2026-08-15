@@ -15,6 +15,7 @@ from main.config import (
     LOG_FILE,
     DOWNLOAD_DIR,
     VOTE_REQUIRED_COUNT,
+    SONG_PRECHECK_TIMEOUT,
 )
 
 from main.music_downloader import (
@@ -43,6 +44,10 @@ class SongRequest:
     added_at: Optional[str] = None
     resolved_title: Optional[str] = None
     resolved_duration: Optional[int] = None
+    # Set by the pre-request precheck (NOT persisted — after a restart the
+    # normal download flow re-resolves everything).
+    resolved_file: Optional[str] = None   # local file found by precheck
+    resolved_url: Optional[str] = None    # YouTube URL found by precheck
 
 
 class RequestQueue:
@@ -195,7 +200,16 @@ class SongRequestBot:
         self._start_time = time.time()
 
     async def _handle_song_request(self, query: str, username: str, channel_id: str):
-        """Handles a music request."""
+        """Handles a music request.
+
+        Inverted flow (search FIRST, queue SECOND):
+          1. precheck: local database check → online YouTube search + validation
+          2. if the song is found (local or online) → add to queue and reply
+             with the RESOLVED title, so the name the user sees here is the
+             same one shown by "Now Playing" later.
+          3. if the song is not found / rejected → clear chat message, and the
+             song is NOT added to the queue.
+        """
         # Block blacklisted users from requesting songs
         if self.admin_handler and self.admin_handler.is_blacklisted(username):
             await self.chat_message.send_public(
@@ -207,8 +221,56 @@ class SongRequestBot:
         if hasattr(self, "analytics"):
             self.analytics.record_request(username, query)
 
+        # ── 1) Precheck: check local database, then online (no download) ──
+        try:
+            result = await asyncio.wait_for(
+                asyncio.get_running_loop().run_in_executor(
+                    self.executor, self.music_downloader.precheck, query
+                ),
+                timeout=SONG_PRECHECK_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Precheck timed out after {SONG_PRECHECK_TIMEOUT}s "
+                f"for '{query}' from @{username}"
+            )
+            await self.chat_message.send_error(
+                channel_id,
+                username,
+                f"Search timed out for '{query}'. Nothing was added, try again later.",
+            )
+            return
+        except Exception as e:
+            logger.error(
+                f"Precheck failed for '{query}' from @{username}: "
+                f"{type(e).__name__}: {e}",
+                exc_info=True,
+            )
+            await self.chat_message.send_error(
+                channel_id,
+                username,
+                f"Search failed for '{query}'. Nothing was added, try again later.",
+            )
+            return
+
+        # ── 2) Song not found or rejected: clear message, NOT queued ──
+        if result["status"] not in ("local", "ok"):
+            logger.info(
+                f"Request rejected by precheck ({result['status']}): "
+                f"'{query}' from @{username}"
+            )
+            await self.chat_message.send_error(channel_id, username, result["error"])
+            return
+
+        # ── 3) Song found: proceed normally, keep resolved metadata ──
         request = SongRequest(query, username, channel_id, self._request_counter)
         self._request_counter += 1
+        request.resolved_title = result.get("title")
+        request.resolved_duration = result.get("duration")
+        if result["status"] == "local":
+            request.resolved_file = result.get("file_path")
+        else:
+            request.resolved_url = result.get("url")
 
         success = await self.request_queue.put(request)
         if not success:
@@ -218,11 +280,14 @@ class SongRequestBot:
             return
 
         position = self.request_queue.qsize()
-        logger.info(f"Request added to queue: {query} from @{username}")
+        display_title = request.resolved_title or query
+        logger.info(
+            f"Request added to queue: {query} → {display_title} (from @{username})"
+        )
 
         await self.chat_message.send_public(
             channel_id,
-            f"✅ Added **{query}** to queue at position {position}",
+            f"✅ Added **{display_title}** to queue at position {position}",
         )
 
         await self._persist_queue()
@@ -321,10 +386,22 @@ class SongRequestBot:
             else:
                 file_path = None
 
+            # Precheck already found the exact local file: use it directly.
+            if (
+                file_path is None
+                and request.resolved_file
+                and os.path.exists(request.resolved_file)
+            ):
+                file_path = request.resolved_file
+
             if file_path is None:
                 try:
+                    # If the precheck resolved a YouTube URL, pass it directly:
+                    # the search was already done at request time, so
+                    # download() only validates + downloads (no second search).
+                    download_target = request.resolved_url or request.query
                     file_path = await asyncio.get_running_loop().run_in_executor(
-                        self.executor, self.music_downloader.download, request.query
+                        self.executor, self.music_downloader.download, download_target
                     )
 
                     if not file_path:
@@ -399,14 +476,14 @@ class SongRequestBot:
                     return False
 
             # Resolve metadata from the file on disk — no network call needed.
-            # download() already searched YouTube (or found a local match),
-            # so calling get_song_info() again would waste time repeating
-            # the same local regex + YouTube search.
+            # resolved_title/duration were usually set by the precheck at
+            # request time; fill them in only when missing (e.g. requests
+            # restored from persistence after a bot restart don't have them).
             if file_path and os.path.exists(file_path):
-                actual_title = os.path.splitext(os.path.basename(file_path))[0]
-                request.resolved_title = actual_title
-                duration = self.music_downloader._get_local_file_duration(file_path)
-                request.resolved_duration = duration
+                if not request.resolved_title:
+                    request.resolved_title = os.path.splitext(os.path.basename(file_path))[0]
+                if not request.resolved_duration:
+                    request.resolved_duration = self.music_downloader._get_local_file_duration(file_path)
 
             # Reset votes for the new song
             self.reset_votes()
