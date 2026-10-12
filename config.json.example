@@ -1,7 +1,7 @@
 {
   "twitch": {
-    "target_channel": "dilidindilidon",
-    "admin_users": ["dilidindilidon", "gmiulia", "uomopuzzo", "ryn_skibidi", "er_pupone_francesco"]
+    "target_channel": "your_twitch_channel",
+    "admin_users": ["your_twitch_channel", "admin_user_1", "admin_user_2"]
   },
   "song": {
     "max_duration_seconds": 900,
