@@ -7,7 +7,7 @@ import os
 
 import setproctitle
 
-setproctitle.setproctitle("chat-tune")
+setproctitle.setproctitle("melos")
 
 from main.config import LOG_LEVEL, LOG_FILE, DASHBOARD_ENABLED, DASHBOARD_PORT, DASHBOARD_HOST
 from main.main_core import SongRequestBot
