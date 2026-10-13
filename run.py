@@ -5,6 +5,10 @@ import asyncio
 import threading
 import os
 
+import setproctitle
+
+setproctitle.setproctitle("chat-tune")
+
 from main.config import LOG_LEVEL, LOG_FILE, DASHBOARD_ENABLED, DASHBOARD_PORT, DASHBOARD_HOST
 from main.main_core import SongRequestBot
 from main.command_processor import CommandProcessor
