@@ -55,7 +55,10 @@ data/*
 .env.secrets
 .env
 tokens.json
+config.json
 
 # OS
 .DS_Store
 Thumbs.db
+
+
